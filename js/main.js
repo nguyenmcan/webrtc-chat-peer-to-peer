@@ -40,22 +40,27 @@ var signalingConnect;
 
 function createSignallingConnection() {
   signalingConnect = io.connect();
-  signalingConnect.on("signaling", processSignalingMessage);
+  signalingConnect.on('signaling', processSignalingMessage);
+  signalingConnect.on('message', onMessage);
+  signalingConnect.on('log', onLog);
 }
 
 function createRoom(room) {
-  signalingConnect.emit("create or join", room);
+  signalingConnect.emit('create or join', room);
 }
 
 function sendSignalMessage(message) {
   var msgString = JSON.stringify(message);
-  signalingConnect.emit("signaling", processSignalingMessage);
-  signalingConnect.emit("message", onMessage);
+  signalingConnect.emit("signaling", msgString);
   trace('C->S: ' + msgString);
 }
 
+function onLog(message) {
+ trace("Server Log: " + message);
+}
+
 function onMessage(message) {
- trace(message);
+ trace("Server Msg: " + message);
 }
 
 function processSignalingMessage(message) {
@@ -70,6 +75,7 @@ function processSignalingMessage(message) {
   }else if (msg.type === 'sdp' && started) {
     rtcPeerConnection.setRemoteDescription(new RTCSessionDescription(signal.sdp));	
   } else if (msg.type === 'answer' && started) {
+    doAnswer();
     rtcPeerConnection.setRemoteDescription(new RTCSessionDescription(msg));
   } else if (msg.type === 'candidate' && started) {
     var candidate = new RTCIceCandidate({sdpMLineIndex:msg.label, candidate:msg.candidate});
@@ -155,10 +161,8 @@ function onIceCandidate(event) {
 
 /////////////////////////////////////////////
 
-
-
-function doAnswer() {
-  rtcPeerConnection.createAnswer(setLocalAndSendMessage, null, mediaConstraints);
+function doAnswer(sessionDescription) {
+  rtcPeerConnection.createAnswer(setLocalAndSendMessage(sessionDescription), null, mediaConstraints);
   trace("Sending answer to peer.");
 }
 
