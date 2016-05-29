@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+  <title>Realtime communication with WebRTC</title>
+
+  <link rel="stylesheet" href="css/main.css" />
+
+</head>
+
+<body>
+
+  <h1>Realtime communication with WebRTC</h1>
+
+  <div id="displayMsg" style="overflow-y:scroll; height:200px; background-color: #FFEBCD; width: 500px"> </div>
+
+  <br/>
+
+  <textarea id="inputMsg" style="width: 450px;height: 50px;resize: none;" placeholder="Enter some text, then press Send."></textarea>
+
+  <br/>
+
+  <div id="buttons">
+    <button id="connectBtn">Connect</button>
+    <button id="sendMsg">Send</button>
+  </div>
+
+  <script src="http://webrtc.github.io/adapter/adapter-latest.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/main.js"></script>
+
+</body>
+
+</html>
