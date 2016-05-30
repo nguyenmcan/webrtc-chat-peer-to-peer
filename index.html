@@ -3,41 +3,89 @@
 
 <head>
 
-  <title>Realtime communication with WebRTC</title>
-
+  <title>Realtime Communication Demo</title>
   <link rel="stylesheet" href="css/main.css" />
 
+  <style>
+    dialog {
+      width: 500px;
+      background: #e8e8e8;
+      border: 1px solid #dadada;
+      font-family: sans-serif;
+      padding: 5px 10px 20px 20px;
+      margin-top: 50px;
+    }
+  </style>
 </head>
 
 <body>
 
-  <h1>Realtime communication with WebRTC</h1>
+  <dialog id="popupDialog">
+    <h3>Please input room and user name!</h3>
+    <p id="roomLabel">Enter room name:</p>
+    <input type="text" id="roomName" value="test" />
+    <p id="userLabel">Enter user name:</p>
+    <input type="text" id="userName" value="test" />
+    <button id="exit" style="">OK</button>
+  </dialog>
 
-  <div style="">
-    <div id="displayMsg" style="overflow-y:scroll; height:200px; background-color: #FFEBCD; width: 500px; display: inline-block"> </div>
-    <video id="displayVideo" style="display: inline-block" autoplay></video>
-  </div>
-
-  <br/>
-
-  <textarea id="inputMsg" style="width: 450px;height: 50px;resize: none;" placeholder="Enter some text, then press Send."></textarea>
-
-  <br/>
-
-  <div id="buttons">
-    <button id="connectBtn">Connect</button>
-    <button id="sendMsg">Send</button>
+  <div id="chatScreen" style="display: none">
+    <div style="display: inline-block; width: 500px">
+      <div id="displayMsg" style="overflow-y:scroll; height:400px; background-color: #FFEBCD">
+      </div>
+      <br/>
+      <textarea id="inputMsg" style="width: 450px;height: 50px;resize: none;" placeholder="Enter some text, then press Send."></textarea>
+      <br/>
+      <div id="buttons">
+        <button id="connectBtn">Connect</button>
+        <button id="startVideoCall">Video Call</button>
+        <button id="sendMsg">Send</button>
+      </div>
+    </div>
+    <div style="display: inline-block; position: absolute">
+      <video id="localVideo" style="" height="200" autoplay></video>
+      <br/>
+      <video id="remoteVideo" style="" height="200" autoplay></video>
+    </div>
   </div>
 
   <script src="http://webrtc.github.io/adapter/adapter-latest.js"></script>
   <script src="/socket.io/socket.io.js"></script>
   <script src="js/main.js"></script>
-  
+
   <script type="text/javascript">
-  	// createSignallingConnection
+    // createSignallingConnection
 	  trace('Created signaling connection');
     createSignalingConnection();
-	  createRoom("room");
+    
+    // create room
+    var chatScreen = document.getElementById('chatScreen');  
+    var dialog = document.getElementById('popupDialog');  
+    var roomInput = document.getElementById('roomName');
+    var userInput = document.getElementById('userName');
+    var roomLabel = document.getElementById('roomLabel');
+    var userLabel = document.getElementById('userLabel');  
+    
+    document.getElementById('exit').onclick = function() {  
+        if (roomInput.value != "" && userInput.value != "") {
+          createOrJoinRoom(roomInput.value, userInput.value);
+          chatScreen.style.display = "block";
+          dialog.close();
+        } else {
+          if(roomInput.value == "") {
+            roomLabel.style.color = "red";
+          } else {
+            roomLabel.style.color = "black";
+          }
+          if(userInput.value == "") {
+            userLabel.style.color = "red";
+          } else {
+            userLabel.style.color = "black";
+          }
+        }
+    };
+    
+    dialog.show();
   </script>
 
 </body>
