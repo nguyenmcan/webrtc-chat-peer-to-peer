@@ -13,7 +13,10 @@
 
   <h1>Realtime communication with WebRTC</h1>
 
-  <div id="displayMsg" style="overflow-y:scroll; height:200px; background-color: #FFEBCD; width: 500px"> </div>
+  <div style="">
+    <div id="displayMsg" style="overflow-y:scroll; height:200px; background-color: #FFEBCD; width: 500px; display: inline-block"> </div>
+    <video id="displayVideo" style="display: inline-block" autoplay></video>
+  </div>
 
   <br/>
 
@@ -29,6 +32,13 @@
   <script src="http://webrtc.github.io/adapter/adapter-latest.js"></script>
   <script src="/socket.io/socket.io.js"></script>
   <script src="js/main.js"></script>
+  
+  <script type="text/javascript">
+  	// createSignallingConnection
+	  trace('Created signaling connection');
+    createSignalingConnection();
+	  createRoom("room");
+  </script>
 
 </body>
 

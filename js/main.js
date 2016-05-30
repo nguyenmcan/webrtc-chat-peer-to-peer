@@ -6,6 +6,7 @@ var displayMsg = document.querySelector('div#displayMsg');
 var inputMsg = document.querySelector('textarea#inputMsg');
 var sendMsg = document.querySelector('button#sendMsg');
 var connectBtn = document.querySelector('button#connectBtn');
+var displayVideo = document.querySelector('video#displayVideo');
 
 connectBtn.onclick = createConnection;
 sendMsg.onclick = sendMessage;
@@ -18,8 +19,8 @@ function sendMessage() {
 }
 
 function displayMessage(msg) {
-  var span = document.createElement("span"); 
-  var br = document.createElement("br"); 
+  var span = document.createElement("span");
+  var br = document.createElement("br");
   span.textContent = msg;
   displayMsg.appendChild(span);
   displayMsg.appendChild(br);
@@ -32,13 +33,16 @@ function displayMessage(msg) {
 var caller = false;
 var rtcPeerConnection;
 var rtcPeerDataChannel;
-var pcConstraint;
+var pcConstraint = { "optional": [] };
 var dataConstraint;
 var signalingConnect;
+var candidate;
+var started = false;
+var servers = { "iceServers": [{ "urls": ["stun:192.168.38.162:3478"] }], "certificates": [] };
 
 ////////////////////////////////////////////
 
-function createSignallingConnection() {
+function createSignalingConnection() {
   signalingConnect = io.connect();
   signalingConnect.on('signaling', processSignalingMessage);
   signalingConnect.on('message', onMessage);
@@ -56,29 +60,21 @@ function sendSignalMessage(message) {
 }
 
 function onLog(message) {
- trace("Server Log: " + message);
+  trace("Server Log: " + message);
 }
 
 function onMessage(message) {
- trace("Server Msg: " + message);
+  trace("Server Msg: " + message);
 }
 
 function processSignalingMessage(message) {
   var msg = JSON.parse(message);
   if (msg.type === 'offer') {
-    // Callee creates PeerConnection
-    if (!initiator && !started) {
-      maybeStart();
-    }
-    rtcPeerConnection.setRemoteDescription(new RTCSessionDescription(msg));
-    doAnswer();
-  }else if (msg.type === 'sdp' && started) {
-    rtcPeerConnection.setRemoteDescription(new RTCSessionDescription(signal.sdp));	
+    doAnswer(msg.sdp);
   } else if (msg.type === 'answer' && started) {
-    doAnswer();
-    rtcPeerConnection.setRemoteDescription(new RTCSessionDescription(msg));
+    rtcPeerConnection.setRemoteDescription(new RTCSessionDescription(msg.sdp));
   } else if (msg.type === 'candidate' && started) {
-    var candidate = new RTCIceCandidate({sdpMLineIndex:msg.label, candidate:msg.candidate});
+    var candidate = new RTCIceCandidate({ sdpMLineIndex: msg.label, candidate: msg.candidate });
     rtcPeerConnection.addIceCandidate(candidate);
   } else if (msg.type === 'bye' && started) {
     onRemoteHangup();
@@ -89,88 +85,120 @@ function processSignalingMessage(message) {
 
 // establish connection
 function createConnection() {
-  var servers = {"iceServers":[{"urls":["turn:192.168.38.162:3478"]}],"certificates":[]};
-  pcConstraint = {"optional":[]};
-  dataConstraint = null;
-
   try {
-	  // createSignallingConnection
-	  trace('Created signaling connection');
-          createSignallingConnection();
-	  createRoom("room");
+    // For SCTP, reliable and ordered delivery is true by default.
+    trace('Created local peer connection object rtcPeerConnection');
+    rtcPeerConnection = new RTCPeerConnection(servers, pcConstraint);
+    rtcPeerConnection.onicecandidate = onIceCandidate;
+    rtcPeerConnection.onaddstream = function () { trace("add stream") };
+    rtcPeerConnection.onremovestream = function () { trace("reove stream") };
+    rtcPeerConnection.onsignalingstatechange = function () {
+      trace("Signaling state changed to: " + rtcPeerConnection.signalingState);
+    };
+    rtcPeerConnection.oniceconnectionstatechange = function () { trace("change state") };
 
-	  // For SCTP, reliable and ordered delivery is true by default.
-	  trace('Created local peer connection object rtcPeerConnection');
-          window.rtcPeerConnection = rtcPeerConnection = new RTCPeerConnection(servers, pcConstraint);
-	  rtcPeerConnection.onicecandidate = onIceCandidate;
-	  rtcPeerConnection.onaddstream = function () {trace("add stream")};
-	  rtcPeerConnection.onremovestream = function () {trace("reove stream")};
-	  rtcPeerConnection.onsignalingstatechange = function () {
-		  trace("Signaling state changed to: " + rtcPeerConnection.signalingState);
-	  };
-	  rtcPeerConnection.oniceconnectionstatechange = function () {trace("change state")};
+    // create data channel
+    rtcPeerDataChannel = rtcPeerConnection.createDataChannel('sendDataChannel', {"reliable": true});
+    rtcPeerDataChannel.binaryType = "arraybuffer";
+    rtcPeerDataChannel.onopen = onrtcPeerDataChannelStateChange;
+    rtcPeerDataChannel.onclose = onrtcPeerDataChannelStateChange;
+    rtcPeerDataChannel.onmessage = onReceiveData;
+    rtcPeerDataChannel.onerror = function (error) {
+      trace("Data channel error: " + error);
+    }
+    rtcPeerDataChannel.onconnecting = function () { trace("onSessionConnecting") };
+    rtcPeerDataChannel.onaddstream = function () { trace("onRemoteStreamAdded") };
+    rtcPeerDataChannel.onremovestream = function () { trace("onRemoteStreamRemoved") };
+    rtcPeerDataChannel.ondatachannel = function () { trace("ondatachannel") };
 
-	  // create data channel
-	  rtcPeerDataChannel = rtcPeerConnection.createDataChannel('sendDataChannel', dataConstraint);
-	  rtcPeerDataChannel.onopen = onrtcPeerDataChannelStateChange;
-	  rtcPeerDataChannel.onclose = onrtcPeerDataChannelStateChange;
-	  rtcPeerDataChannel.onmessage = onReceiveData;
-	  rtcPeerDataChannel.onconnecting = function () {trace("onSessionConnecting")};
-	  rtcPeerDataChannel.onaddstream = function () {trace("onRemoteStreamAdded")};
-	  rtcPeerDataChannel.onremovestream = function () {trace("onRemoteStreamRemoved")};
-
-	  // 
-	  rtcPeerConnection.createOffer().then(gotDescription);
+    // 
+    rtcPeerConnection.createOffer().then(gotDescription);
 
   } catch (e) {
-	  trace("Failed to create PeerConnection, exception: " + e.message);
-	  return;
+    trace("Failed to create PeerConnection, exception: " + e.message);
+    return;
   }
 
+  connectBtn.disabled = true;
   caller = true;
-  connectBtn.disable = true;
+  started = true;
   trace("End of create connection");
 }
 
-function gotDescription(desc) {
-    if(caller) {
-	    rtcPeerConnection.setLocalDescription(desc);
-	    sendSignalMessage(JSON.stringify({ "type": "sdp", "sdp": desc }));
-	    trace('Offer from rtcPeerConnection');
-    }
+function onReceiveData(data) {
+  displayMessage(data.data);
+  trace("Received data from remote: " + data.data);
 }
 
-function onReceiveData(data) {
-  displayMessage(data);
-  trace("Received data from remote: " + data);
+function gotDescription(desc) {
+  rtcPeerConnection.setLocalDescription(desc);
+  // send local description
+  sendSignalMessage({ "type": "offer", "sdp": desc });
+  trace('Set local description ' + desc);
 }
 
 function onIceCandidate(event) {
-    if (event.candidate) {
-	if(caller) {
-		sendSignalMessage({type: 'candidate',
-		label: event.candidate.sdpMLineIndex,
-		id: event.candidate.sdpMid,
-		candidate: event.candidate.candidate});
-	}
-    	trace("onIceCandidate: " + event.candidate.candidate);
-    } else {
-	trace("End of candidates." + event);
-    }
+  if (event.candidate) {
+    // send cadidate info
+    sendSignalMessage({
+      type: 'candidate',
+      label: event.candidate.sdpMLineIndex,
+      id: event.candidate.sdpMid,
+      candidate: event.candidate.candidate
+    });
+    trace("onIceCandidate: " + event.candidate.candidate);
+  } else {
+    trace("End of candidates." + event);
+  }
 }
 
 /////////////////////////////////////////////
 
-function doAnswer(sessionDescription) {
-  rtcPeerConnection.createAnswer(setLocalAndSendMessage(sessionDescription), null, mediaConstraints);
+function doAnswer(offerSDP) {
+  try {
+    // For SCTP, reliable and ordered delivery is true by default.
+    trace('Created local peer connection object rtcPeerConnection');
+    rtcPeerConnection = new RTCPeerConnection(servers, pcConstraint);
+    rtcPeerConnection.onicecandidate = onIceCandidate;
+    rtcPeerConnection.onaddstream = function () { trace("add stream") };
+    rtcPeerConnection.onremovestream = function () { trace("reove stream") };
+    rtcPeerConnection.onsignalingstatechange = function () {
+      trace("Signaling state changed to: " + rtcPeerConnection.signalingState);
+    };
+    rtcPeerConnection.oniceconnectionstatechange = function () { trace("change state") };
+
+    // create data channel
+    
+    rtcPeerConnection.ondatachannel = function (event) {
+        rtcPeerDataChannel = event.channel;
+        rtcPeerDataChannel.binaryType = "arraybuffer";
+        rtcPeerDataChannel.onopen = onrtcPeerDataChannelStateChange;
+        rtcPeerDataChannel.onclose = onrtcPeerDataChannelStateChange;
+        rtcPeerDataChannel.onmessage = onReceiveData;
+        rtcPeerDataChannel.onerror = function (error) {
+          trace("Data channel error: " + error);
+        }
+        rtcPeerDataChannel.onconnecting = function () { trace("onSessionConnecting") };
+        rtcPeerDataChannel.onaddstream = function () { trace("onRemoteStreamAdded") };
+        rtcPeerDataChannel.onremovestream = function () { trace("onRemoteStreamRemoved") };
+        trace("Add channel event!");
+    };
+   
+    //
+    rtcPeerConnection.setRemoteDescription(new RTCSessionDescription(offerSDP));
+    rtcPeerConnection.createAnswer().then(setLocalAndSendMessage);
+
+  } catch (e) {
+    trace("Failed to create PeerConnection, exception: " + e.message);
+    return;
+  }
   trace("Sending answer to peer.");
 }
 
-function setLocalAndSendMessage(sessionDescription) {
+function setLocalAndSendMessage(answerSDP) {
   // Set Opus as the preferred codec in SDP if Opus is present.
-  sessionDescription.sdp = preferOpus(sessionDescription.sdp);
-  rtcPeerConnection.setLocalDescription(sessionDescription);
-  sendSignalMessage(sessionDescription);
+  rtcPeerConnection.setLocalDescription(answerSDP);
+  sendSignalMessage({ "type": "answer", "sdp": answerSDP });
 }
 
 function onrtcPeerDataChannelStateChange() {

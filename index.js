@@ -20,6 +20,12 @@ io.sockets.on('connection', function(socket) {
     socket.emit('log', array);
   }
 
+  socket.on('signaling', function(message) {
+    log('Client said: ', message);
+    // for a real app, would be room-only (not broadcast)
+    socket.broadcast.emit('signaling', message);
+  });
+  
   socket.on('message', function(message) {
     log('Client said: ', message);
     // for a real app, would be room-only (not broadcast)
