@@ -21,19 +21,17 @@ io.sockets.on('connection', function (socket) {
   }
 
   socket.on('signaling', function (message) {
-    log('Client said: ', message);
-    // for a real app, would be room-only (not broadcast)
-    socket.broadcast.emit('signaling', message);
+    log(socket.user + ' said: ' + message);
+    socket.broadcast.to(socket.room).emit('signaling', message);
   });
 
   socket.on('message', function (message) {
-    log('Client said: ', message);
-    // for a real app, would be room-only (not broadcast)
-    socket.broadcast.emit('message', message);
+    log(socket.user + ' said: ' + message);
+    socket.broadcast.to(socket.room).emit('message', message);
   });
 
   socket.on('create or join', function (room, user) {
-    log('Received request to create or join room ' + room);
+    log('Request to create or join room ' + room + ' from ' + user);
 
     var roomSize = 0;
     if (io.sockets.adapter.rooms[room]) {
@@ -42,17 +40,21 @@ io.sockets.on('connection', function (socket) {
 
     if (roomSize === 0) {
       socket.join(room);
+      socket.room = room;
       socket.user = user;
       socket.emit('created', room, socket.id);
       roomSize++;
       log('User ' + user + ' created room ' + room);
-    } else {
+    } else if (roomSize === 1) {
       socket.join(room);
+      socket.room = room;
       socket.user = user;
       socket.emit('joined', room, socket.id);
       io.sockets.in(room).emit('join', room, socket.id);
       roomSize++;
       log('User ' + user + ' joined room ' + room);
+    } else {
+      socket.emit('rejected', "Full room. Please select other room!");
     }
 
     log('Room ' + room + ' now has ' + roomSize + ' client(s)');

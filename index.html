@@ -21,7 +21,7 @@
 <body>
 
   <dialog id="popupDialog">
-    <h3>Please input room and user name!</h3>
+    <h3>Input room and user name!</h3>
     <p id="roomLabel">Enter room name:</p>
     <input type="text" id="roomName" value="test" />
     <p id="userLabel">Enter user name:</p>
@@ -31,21 +31,19 @@
 
   <div id="chatScreen" style="display: none">
     <div style="display: inline-block; width: 500px">
-      <div id="displayMsg" style="overflow-y:scroll; height:400px; background-color: #FFEBCD">
+      <div id="displayMsg" style="overflow-y:scroll; height:305px; background-color: #FFEBCD">
+      </div>
+      <div style="margin-top: 5px">
+        <textarea id="inputMsg" style="width: 380px;height: 50px;resize: none" placeholder="Enter some text..."></textarea>
+        <button id="videoCall" style="background-color:#00FF3A; height: 55px; width:50px; float:right; margin-left: 5px">Video Call</button>
+        <button id="sendMsg" style="background-color:#DADADA; height: 55px; width:50px; float:right">Send Text</button>
       </div>
       <br/>
-      <textarea id="inputMsg" style="width: 450px;height: 50px;resize: none;" placeholder="Enter some text, then press Send."></textarea>
-      <br/>
-      <div id="buttons">
-        <button id="connectBtn">Connect</button>
-        <button id="startVideoCall">Video Call</button>
-        <button id="sendMsg">Send</button>
-      </div>
     </div>
     <div style="display: inline-block; position: absolute">
-      <video id="localVideo" style="" height="200" autoplay></video>
+      <video id="localVideo" style="margin-left: 5px; width:200px" autoplay></video>
       <br/>
-      <video id="remoteVideo" style="" height="200" autoplay></video>
+      <video id="remoteVideo" style="margin-left: 5px; width:200px" autoplay></video>
     </div>
   </div>
 
@@ -68,9 +66,15 @@
     
     document.getElementById('exit').onclick = function() {  
         if (roomInput.value != "" && userInput.value != "") {
-          createOrJoinRoom(roomInput.value, userInput.value);
-          chatScreen.style.display = "block";
-          dialog.close();
+          createOrJoinRoom(roomInput.value, userInput.value, function (type, message) {
+             if(type == "error") {
+               alert(message);
+               dialog.show();
+             } else { 
+               chatScreen.style.display = "block";
+               dialog.close();
+             }
+          });
         } else {
           if(roomInput.value == "") {
             roomLabel.style.color = "red";
