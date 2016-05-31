@@ -54,7 +54,7 @@ io.sockets.on('connection', function (socket) {
       roomSize++;
       log('User ' + user + ' joined room ' + room);
     } else {
-      socket.emit('rejected', "Full room. Please select other room!");
+      socket.emit('error', "Full room. Please select other room!");
     }
 
     log('Room ' + room + ' now has ' + roomSize + ' client(s)');

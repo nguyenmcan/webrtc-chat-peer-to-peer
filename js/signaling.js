@@ -1,16 +1,39 @@
 
 function WebRTCSignaling(socket) {
-    var iosocket = socket;
-    iosocket.on('signaling', processSignalingMessage);
+    var socket_io = socket;
 
-    function createRoom(room, user) {
-        signalingConnect.emit('create or join', room, user);
+    socket_io.on('offer', function (message) {
+        var msg = JSON.parse(message);
+        onoffer(msg);
+    });
+
+    socket_io.on('answer', function (message) {
+        var msg = JSON.parse(message);
+        onanswer(msg);
+    });
+
+    socket_io.on('cadidate', function (message) {
+        var msg = JSON.parse(message);
+        oncadidate(msg);
+    });
+
+    function offer(description) {
+        var msgString = JSON.stringify({ "sdp": description });
+        socket_io.emit("offer", msgString);
     }
 
-    function sendSignalMessage(message) {
-        var msgString = JSON.stringify(message);
-        signalingConnect.emit("signaling", msgString);
-        trace('C->S: ' + msgString);
+    function answer(description) {
+        var msgString = JSON.stringify({ "sdp": description });
+        socket_io.emit("answer", msgString);
+    }
+
+    function cadidate(cadidate) {
+        var msgString = JSON.stringify({
+            label: candidate.sdpMLineIndex,
+            id: candidate.sdpMid,
+            candidate: candidate.candidate
+        });
+        socket_io.emit("candidate", msgString);
     }
 
     function processSignalingMessage(message) {
@@ -26,4 +49,16 @@ function WebRTCSignaling(socket) {
             onRemoteHangup();
         }
     }
+}
+
+WebRTCSignaling.prototype.onoffer = function (msg) {
+
+}
+
+WebRTCSignaling.prototype.onanswer = function (msg) {
+
+}
+
+WebRTCSignaling.prototype.oncadidate = function (msg) {
+
 }

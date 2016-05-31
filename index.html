@@ -49,6 +49,8 @@
 
   <script src="http://webrtc.github.io/adapter/adapter-latest.js"></script>
   <script src="/socket.io/socket.io.js"></script>
+  <script src="js/chat.js"></script>
+  <script src="js/signaling.js"></script>
   <script src="js/main.js"></script>
 
   <script type="text/javascript">
@@ -64,11 +66,11 @@
     var roomLabel = document.getElementById('roomLabel');
     var userLabel = document.getElementById('userLabel');  
     
-    document.getElementById('exit').onclick = function() {  
+    document.getElementById('exit').onclick = function() {
         if (roomInput.value != "" && userInput.value != "") {
-          createOrJoinRoom(roomInput.value, userInput.value, function (type, message) {
-             if(type == "error") {
-               alert(message);
+          openChatScreen(roomInput.value, userInput.value, function (message, error) {
+             if(error) {
+               alert(error);
                dialog.show();
              } else { 
                chatScreen.style.display = "block";

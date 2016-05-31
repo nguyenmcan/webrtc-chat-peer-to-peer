@@ -4,24 +4,42 @@
 
 var displayMsg = document.querySelector('div#displayMsg');
 var inputMsg = document.querySelector('textarea#inputMsg');
-var sendMsg = document.querySelector('button#sendMsg');
-var connectBtn = document.querySelector('button#connectBtn');
 var localVideo = document.querySelector('video#localVideo');
 var remoteVideo = document.querySelector('video#remoteVideo');
+var sendMsgBtn = document.querySelector('button#sendMsg');
 var videoCallBtn = document.querySelector('button#videoCall');
 
-videoCallBtn.onclick = videoCall;
-sendMsg.onclick = sendMessage;
+sendMsgBtn.onclick = sendMessage;
+videoCallBtn.onclick = startVideoCall;
+
+//////////////////// CHAT ROOM ///////////////////////
+
+var socket = io.connect();
+
+function openChatScreen(room, user, callback) {
+  socket.on('message', function (message) {
+    onMessage(message);
+  });
+  socket.on('created', function (user, socketId) {
+    callback(user, null);
+  });
+  socket.on('joined', function (user, socketId) {
+    callback(user, null);
+  });
+  socket.on('error', function (error) {
+    callback(null, error);
+  });
+  socket.emit('create or join', room, user);
+}
 
 function sendMessage() {
   var data = inputMsg.value;
-  rtcPeerDataChannel.send(data);
+  socket.emit("message", data);
   displayMessage(data);
   inputMsg.value = "";
-  trace('Sent Data: ' + data);
 }
 
-function displayMessage(msg) {
+function onMessage(msg) {
   var span = document.createElement("span");
   var br = document.createElement("br");
   span.textContent = msg;
@@ -31,7 +49,7 @@ function displayMessage(msg) {
   trace('Received Data: ' + msg);
 }
 
-////////////////////////////////////////////
+///////////////////////////////////////////
 
 var isVideoCall = false;
 var initiator = false;
@@ -39,54 +57,23 @@ var rtcPeerConnection;
 var rtcPeerDataChannel;
 var pcConstraint = { "optional": [] };
 var dataConstraint;
-var signalingConnect;
 var candidates = [];
 var servers = { "iceServers": [{ "urls": ["stun:192.168.38.162:3478"] }], "certificates": [] };
 var localStream;
 var remoteStream;
-var jsonSocket = new JSONSocket();
 
-////////////////////////////////////////////
+///////////////////// SIGNALING //////////////////////
 
-var createRoomCallback;
-
-function createSignalingConnection() {
-  signalingConnect = io.connect();
-  signalingConnect.on('signaling', processSignalingMessage);
-  signalingConnect.on('message', onMessage);
-
-  signalingConnect.on('created', function (user, socketId) {
-    initiator = true;
-    createRoomCallback("created", user);
-  });
-
-  signalingConnect.on('joined', function (user, socketId) {
-    createRoomCallback("joined", user);
-    signalingConnect.emit("message", user + " has joined!");
-    createPeerConnection();
-  });
-
-  signalingConnect.on('rejected', function (message) {
-    createRoomCallback("error", message);
-  });
-}
-
-function createOrJoinRoom(room, user, callback) {
-  createRoomCallback = callback;
-  signalingConnect.emit('create or join', room, user);
+function openSignalConnect() {
+  socket.on('signaling', processSignalingMessage);
 }
 
 function sendSignalMessage(message) {
   var msgString = JSON.stringify(message);
   signalingConnect.emit("signaling", msgString);
-  trace('C->S: ' + msgString);
 }
 
-function onMessage(message) {
-  displayMessage(message);
-}
-
-function processSignalingMessage(message) {
+function processSignalMessage(message) {
   var msg = JSON.parse(message);
   if (msg.type === 'offer') {
     doAnswer(msg.sdp);
@@ -102,7 +89,7 @@ function processSignalingMessage(message) {
 
 ////////////////////////////////////////////
 
-function videoCall() {
+function startVideoCall() {
   if (!isVideoCall) {
     startMediaStream();
   } else {
