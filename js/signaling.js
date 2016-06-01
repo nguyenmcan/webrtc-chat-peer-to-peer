@@ -1,64 +1,54 @@
 
-function WebRTCSignaling(socket) {
-    var socket_io = socket;
-
-    socket_io.on('offer', function (message) {
-        var msg = JSON.parse(message);
-        onoffer(msg);
-    });
-
-    socket_io.on('answer', function (message) {
-        var msg = JSON.parse(message);
-        onanswer(msg);
-    });
-
-    socket_io.on('cadidate', function (message) {
-        var msg = JSON.parse(message);
-        oncadidate(msg);
-    });
-
-    function offer(description) {
-        var msgString = JSON.stringify({ "sdp": description });
-        socket_io.emit("offer", msgString);
-    }
-
-    function answer(description) {
-        var msgString = JSON.stringify({ "sdp": description });
-        socket_io.emit("answer", msgString);
-    }
-
-    function cadidate(cadidate) {
-        var msgString = JSON.stringify({
-            label: candidate.sdpMLineIndex,
-            id: candidate.sdpMid,
-            candidate: candidate.candidate
-        });
-        socket_io.emit("candidate", msgString);
-    }
-
-    function processSignalingMessage(message) {
-        var msg = JSON.parse(message);
-        if (msg.type === 'offer') {
-            doAnswer(msg.sdp);
-        } else if (msg.type === 'answer' && started) {
-            rtcPeerConnection.setRemoteDescription(new RTCSessionDescription(msg.sdp));
-        } else if (msg.type === 'candidate' && started) {
-            var candidate = new RTCIceCandidate({ sdpMLineIndex: msg.label, candidate: msg.candidate });
-            rtcPeerConnection.addIceCandidate(candidate);
-        } else if (msg.type === 'bye' && started) {
-            onRemoteHangup();
-        }
-    }
+var WebRTCSignaling = function (socket) {
+    this.socket_io = socket;
 }
 
-WebRTCSignaling.prototype.onoffer = function (msg) {
-
+WebRTCSignaling.prototype.connect = function () {
+    var o = this;
+    this.socket_io.on('offer', function (message) {
+        var msg = JSON.parse(message);
+        o.onoffer(msg.sdp);
+    });
+    this.socket_io.on('answer', function (message) {
+        var msg = JSON.parse(message);
+        o.onanswer(msg.sdp);
+    });
+    this.socket_io.on('candidate', function (message) {
+        var msg = JSON.parse(message);
+        o.oncandidate(msg);
+    });
+    this.socket_io.on('rtc-close', function () {
+        o.onclose();
+    });
 }
 
-WebRTCSignaling.prototype.onanswer = function (msg) {
+WebRTCSignaling.prototype.onoffer = function (description) { }
 
+WebRTCSignaling.prototype.onclose = function () { }
+
+WebRTCSignaling.prototype.onanswer = function (description) { }
+
+WebRTCSignaling.prototype.oncandidate = function (candidate) { }
+
+WebRTCSignaling.prototype.sendOffer = function (description) {
+    var msgString = JSON.stringify({ "sdp": description });
+    this.socket_io.emit("offer", msgString);
 }
 
-WebRTCSignaling.prototype.oncadidate = function (msg) {
+WebRTCSignaling.prototype.sendAnswer = function (description) {
+    var msgString = JSON.stringify({ "sdp": description });
+    this.socket_io.emit("answer", msgString);
+}
 
+WebRTCSignaling.prototype.closeConnect = function () {
+    this.socket_io.emit("rtc-close");
+}
+
+WebRTCSignaling.prototype.sendCandidate = function (candidate) {
+    var msgString = JSON.stringify({
+        sdpMLineIndex: candidate.sdpMLineIndex,
+        sdpMid: candidate.sdpMid,
+        candidate: candidate.candidate
+    });
+    this.socket_io.emit("candidate", msgString);
 }

@@ -11,8 +11,8 @@ var app = http.createServer(function (req, res) {
 }).listen(8080);
 
 var io = socketIO.listen(app);
-io.sockets.on('connection', function (socket) {
 
+io.sockets.on('connection', function (socket) {
   function log(msg) {
     //var array = ['Message from server:'];
     //array.push.apply(array, arguments);
@@ -20,14 +20,31 @@ io.sockets.on('connection', function (socket) {
     console.log(msg);
   }
 
-  socket.on('signaling', function (message) {
-    log(socket.user + ' said: ' + message);
-    socket.broadcast.to(socket.room).emit('signaling', message);
+  socket.on('candidate', function (message) {
+    socket.broadcast.to(socket.room).emit('candidate', message);
   });
+
+  socket.on('answer', function (message) {
+    socket.broadcast.to(socket.room).emit('answer', message);
+  });
+
+  socket.on('offer', function (message) {
+    socket.broadcast.to(socket.room).emit('offer', message);
+  });
+  
+  socket.on('rtc-close', function () {
+    socket.broadcast.to(socket.room).emit('rtc-close');
+  });  
 
   socket.on('message', function (message) {
     log(socket.user + ' said: ' + message);
-    socket.broadcast.to(socket.room).emit('message', message);
+    socket.broadcast.to(socket.room).emit('message', socket.user, message);
+  });
+
+  socket.on('disconnect', function () {
+    if (socket.user) {
+      socket.broadcast.to(socket.room).emit('leaved', "system", socket.user + " leaved room!");
+    }
   });
 
   socket.on('create or join', function (room, user) {
@@ -50,7 +67,7 @@ io.sockets.on('connection', function (socket) {
       socket.room = room;
       socket.user = user;
       socket.emit('joined', room, socket.id);
-      io.sockets.in(room).emit('join', room, socket.id);
+      socket.broadcast.to(socket.room).emit('message', "system", socket.user + " joined room!");
       roomSize++;
       log('User ' + user + ' joined room ' + room);
     } else {

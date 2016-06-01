@@ -3,6 +3,7 @@
 ///////////////////////////////////////////
 
 var displayMsg = document.querySelector('div#displayMsg');
+var videoDisplay = document.querySelector('div#videoDisplay');
 var inputMsg = document.querySelector('textarea#inputMsg');
 var localVideo = document.querySelector('video#localVideo');
 var remoteVideo = document.querySelector('video#remoteVideo');
@@ -15,77 +16,95 @@ videoCallBtn.onclick = startVideoCall;
 //////////////////// CHAT ROOM ///////////////////////
 
 var socket = io.connect();
+var chatRoom = new ChatRoom(socket);
 
 function openChatScreen(room, user, callback) {
-  socket.on('message', function (message) {
-    onMessage(message);
-  });
-  socket.on('created', function (user, socketId) {
+  chatRoom.oncreated = function (user, socketId) {
     callback(user, null);
-  });
-  socket.on('joined', function (user, socketId) {
+    displayMessage("created room!");
+  }
+  chatRoom.onjoined = function (user, socketId) {
     callback(user, null);
-  });
-  socket.on('error', function (error) {
+    displayMessage("joined room!");
+  }
+  chatRoom.onleaved = function (user, message) {
+    displayMessage("[" + user + "]: " + message);
+  }
+  chatRoom.onerror = function (error) {
     callback(null, error);
-  });
-  socket.emit('create or join', room, user);
+  }
+  chatRoom.onmessage = function (user, message) {
+    displayMessage("[" + user + "]: " + message);
+  }
+  chatRoom.createOrJoin(room, user);
 }
 
 function sendMessage() {
-  var data = inputMsg.value;
-  socket.emit("message", data);
-  displayMessage(data);
-  inputMsg.value = "";
+  var message = inputMsg.value;
+  if (message) {
+    chatRoom.send(message);
+    displayMessage("[" + chatRoom.user + "]: " + inputMsg.value);
+    inputMsg.value = "";
+  }
 }
 
-function onMessage(msg) {
+function displayMessage(message) {
   var span = document.createElement("span");
   var br = document.createElement("br");
-  span.textContent = msg;
+  span.textContent = message;
   displayMsg.appendChild(span);
   displayMsg.appendChild(br);
   span.scrollIntoView();
-  trace('Received Data: ' + msg);
+}
+
+function addVideoElement(stream) {
+  var video = document.createElement("video");
+  var br = document.createElement("br");
+  video.style = "margin-left: 5px; width:200px";
+  video.autoplay = true;
+  videoDisplay.appendChild(video);
+  videoDisplay.appendChild(br);
+  if (window.URL) {
+    video.src = window.URL.createObjectURL(stream);
+  } else {
+    video.srcObject = stream;
+  }
+  trace("Add remote stream! + " + stream);
+  return video;
 }
 
 ///////////////////////////////////////////
 
 var isVideoCall = false;
 var initiator = false;
-var rtcPeerConnection;
-var rtcPeerDataChannel;
+var rtcConnection;
 var pcConstraint = { "optional": [] };
 var dataConstraint;
-var candidates = [];
 var servers = { "iceServers": [{ "urls": ["stun:192.168.38.162:3478"] }], "certificates": [] };
 var localStream;
 var remoteStream;
+var signalService = new WebRTCSignaling(socket);
 
-///////////////////// SIGNALING //////////////////////
+//////////////// SIGNALING ////////////////
 
-function openSignalConnect() {
-  socket.on('signaling', processSignalingMessage);
+signalService.onoffer = function (sdp) {
+  createAnswer(sdp);
+  videoCallBtn.disabled = true;
 }
 
-function sendSignalMessage(message) {
-  var msgString = JSON.stringify(message);
-  signalingConnect.emit("signaling", msgString);
+signalService.onanswer = function (sdp) {
+  rtcConnection.setRemoteDescription(new RTCSessionDescription(sdp));
 }
 
-function processSignalMessage(message) {
-  var msg = JSON.parse(message);
-  if (msg.type === 'offer') {
-    doAnswer(msg.sdp);
-  } else if (msg.type === 'answer') {
-    rtcPeerConnection.setRemoteDescription(new RTCSessionDescription(msg.sdp));
-  } else if (msg.type === 'candidate') {
-    var candidate = new RTCIceCandidate({ sdpMLineIndex: msg.label, candidate: msg.candidate });
-    rtcPeerConnection.addIceCandidate(candidate);
-  } else if (msg.type === 'bye') {
-    onRemoteHangup();
-  }
+signalService.oncandidate = function (candidate) {
+  rtcConnection.addIceCandidate(new RTCIceCandidate(candidate));
 }
+
+signalService.onclose = function () {
+  stopMediaStream();
+}
+
+signalService.connect();
 
 ////////////////////////////////////////////
 
@@ -97,97 +116,61 @@ function startVideoCall() {
   }
 }
 
-function stopMediaStream() {
-  if (localStream.getVideoTracks()[0]) {
-    localStream.getVideoTracks()[0].stop();
-  }
-  if (localStream.getAudioTracks()[0]) {
-    localStream.getAudioTracks()[0].stop();
-  }
-  rtcPeerConnection.removeStream(localStream);
-  rtcPeerConnection.createOffer().then(function (desc) {
-    rtcPeerConnection.setLocalDescription(desc);
-    sendSignalMessage({ "type": "offer", "sdp": desc });
-    trace('Set local description ' + desc);
-  });
-  videoCallBtn.style["background-color"] = "#00FF3A";
-  videoCallBtn.textContent = "Start Call";
-  isVideoCall = false;
-  trace("Remove localStream");
-}
-
 function startMediaStream() {
-  trace('Requesting local stream');
   navigator.mediaDevices.getUserMedia({
     audio: true,
     video: true
   }).then(function (stream) {
-    if (window.URL) {
-      localVideo.src = window.URL.createObjectURL(stream);
-      remoteVideo.src = window.URL.createObjectURL(stream);
-    } else {
-      localVideo.srcObject = stream;
-    }
     window.localStream = localStream = stream;
-    if (rtcPeerConnection) {
-      rtcPeerConnection.addStream(localStream);
-      rtcPeerConnection.createOffer().then(function (desc) {
-        rtcPeerConnection.setLocalDescription(desc);
-        sendSignalMessage({ "type": "offer", "sdp": desc });
-        trace('Set local description ' + desc);
-      });
-      videoCallBtn.style["background-color"] = "red";
-      videoCallBtn.textContent = "Stop Call";
-      isVideoCall = true;
-      trace("Add localStream");
+    localVideo = addVideoElement(localStream);
+    createRTCConnection();
+    createOffer();
+    videoCallBtn.style["background-color"] = "red";
+    videoCallBtn.textContent = "Stop Call";
+    isVideoCall = true;
+  })
+}
+
+function stopMediaStream() {
+  if (localStream) {
+    if (localStream.getVideoTracks()[0]) {
+      localStream.getVideoTracks()[0].stop();
     }
-  }).catch(function (e) {
-    alert('getUserMedia() error: ' + e.name);
-  });
+    if (localStream.getAudioTracks()[0]) {
+      localStream.getAudioTracks()[0].stop();
+    }
+  }
+
+  closeRTCConnection();
+  signalService.closeConnect();
+
+  videoCallBtn.disabled = false;
+  videoCallBtn.style["background-color"] = "#00FF3A";
+  videoCallBtn.textContent = "Start Call";
+  isVideoCall = false;
+  videoDisplay.innerHTML = null;
+  trace("Remove localStream");
 }
 
 ////////////////////////////////////////////
 
-// establish connection
-function createPeerConnection() {
+function createRTCConnection() {
   try {
-    // For SCTP, reliable and ordered delivery is true by default.
-    rtcPeerConnection = new RTCPeerConnection(servers, pcConstraint);
-    rtcPeerConnection.onicecandidate = onIceCandidate;
-    rtcPeerConnection.onremovestream = function () {
-      startVideoCall.disabled = false;
-      stopVideoCall.disabled = true;
+    rtcConnection = new RTCPeerConnection(servers, pcConstraint);
+    rtcConnection.onicecandidate = onIceCandidate;
+    rtcConnection.onremovestream = function () {
       trace("Remove stream!");
     };
-    rtcPeerConnection.onsignalingstatechange = function () {
-      trace("Signaling state changed to: " + rtcPeerConnection.signalingState);
+    rtcConnection.onsignalingstatechange = function () {
+      trace("Signaling state changed to: " + rtcConnection.signalingState);
     };
-    rtcPeerConnection.oniceconnectionstatechange = function () { trace("change state") };
-    rtcPeerConnection.onaddstream = function (e) {
-      if (window.URL) {
-        remoteVideo.src = window.URL.createObjectURL(e.stream);
-      } else {
-        remoteVideo.srcObject = e.stream;
-      }
-      window.remoteStream = remoteStream = e.stream;
-      startVideoCall.disabled = true;
-      stopVideoCall.disabled = true;
-      trace("Add remote stream!");
+    rtcConnection.onaddstream = function (event) {
+      window.remoteStream = remoteStream = event.stream;
+      remoteVideo = addVideoElement(remoteStream);
+    };
+    if (localStream) {
+      rtcConnection.addStream(localStream);
     }
-    rtcPeerConnection.ondatachannel = function (event) {
-      rtcPeerDataChannel = event.channel;
-      setEventDataChannel(rtcPeerDataChannel);
-    };
-
-    // create data channel
-    rtcPeerDataChannel = rtcPeerConnection.createDataChannel('sendDataChannel', { "reliable": false });
-    setEventDataChannel(rtcPeerDataChannel);
-
-    rtcPeerConnection.createOffer().then(function (desc) {
-      rtcPeerConnection.setLocalDescription(desc);
-      sendSignalMessage({ "type": "offer", "sdp": desc });
-      trace('Set local description ' + desc);
-    });
     trace('Created local peer connection object RTCPeerConnection');
   } catch (e) {
     trace("Failed to create PeerConnection, exception: " + e.message);
@@ -195,101 +178,34 @@ function createPeerConnection() {
   }
 }
 
-function setEventDataChannel(dataChannel) {
-  dataChannel.binaryType = "arraybuffer";
-  dataChannel.onopen = onrtcPeerDataChannelStateChange;
-  dataChannel.onclose = onrtcPeerDataChannelStateChange;
-  dataChannel.onmessage = onReceiveData;
-  dataChannel.onerror = function (error) {
-    trace("Data channel error: " + error);
-  }
-  dataChannel.onconnecting = function () { trace("onSessionConnecting") };
-  dataChannel.onaddstream = function () { trace("onRemoteStreamAdded") };
-  dataChannel.onremovestream = function () { trace("onRemoteStreamRemoved") };
-  trace("Add channel event!");
+function closeRTCConnection() {
+  rtcConnection.close();
 }
 
-function onReceiveData(data) {
-  displayMessage(data.data);
-  trace("Received data from remote: " + data.data);
+function createOffer() {
+  rtcConnection.createOffer().then(function (desc) {
+    rtcConnection.setLocalDescription(desc);
+    signalService.sendOffer(desc);
+  });
 }
 
-function gotDescription(desc) {
-  rtcPeerConnection.setLocalDescription(desc);
-  // send local description
-  sendSignalMessage({ "type": "offer", "sdp": desc });
-  trace('Set local description ' + desc);
+function createAnswer(offerSDP) {
+  createRTCConnection();
+  rtcConnection.setRemoteDescription(new RTCSessionDescription(offerSDP));
+  rtcConnection.createAnswer().then(function (answerSDP) {
+    rtcConnection.setLocalDescription(answerSDP);
+    signalService.sendAnswer(answerSDP);
+  });
+  trace(">>>> Create answer!");
 }
 
 function onIceCandidate(event) {
   if (event.candidate) {
-    sendSignalMessage({
-      type: 'candidate',
-      label: event.candidate.sdpMLineIndex,
-      id: event.candidate.sdpMid,
-      candidate: event.candidate.candidate
-    });
+    signalService.sendCandidate(event.candidate);
     trace("onIceCandidate: " + event.candidate.candidate);
   } else {
     trace("End of candidates." + event);
   }
-}
-
-/////////////////////////////////////////////
-
-function doAnswer(offerSDP) {
-  try {
-    if (rtcPeerConnection && rtcPeerConnection.iceConnectionState == "connected") {
-      rtcPeerConnection.setRemoteDescription(new RTCSessionDescription(offerSDP));
-      rtcPeerConnection.createAnswer().then(setLocalAndSendMessage);
-    } else {
-      rtcPeerConnection = new RTCPeerConnection(servers, pcConstraint);
-      rtcPeerConnection.onicecandidate = onIceCandidate;
-      rtcPeerConnection.onremovestream = function () {
-        startVideoCall.disabled = false;
-        stopVideoCall.disabled = true;
-        trace("Remove stream!");
-      };
-      rtcPeerConnection.onsignalingstatechange = function () {
-        trace("Signaling state changed to: " + rtcPeerConnection.signalingState);
-      };
-      rtcPeerConnection.oniceconnectionstatechange = function (e) { trace("change state " + e) };
-
-      rtcPeerConnection.onaddstream = function (e) {
-        if (window.URL) {
-          remoteVideo.src = window.URL.createObjectURL(e.stream);
-        } else {
-          remoteVideo.srcObject = e.stream;
-        }
-        window.remoteStream = remoteStream = e.stream;
-        startVideoCall.disabled = true;
-        stopVideoCall.disabled = true;
-        trace("Add remote stream!");
-      }
-
-      rtcPeerConnection.ondatachannel = function (event) {
-        rtcPeerDataChannel = event.channel;
-        setEventDataChannel(rtcPeerDataChannel);
-      };
-
-      rtcPeerConnection.setRemoteDescription(new RTCSessionDescription(offerSDP));
-      rtcPeerConnection.createAnswer().then(setLocalAndSendMessage);
-    }
-  } catch (e) {
-    trace("Failed to create PeerConnection, exception: " + e.message);
-    return;
-  }
-  trace('Created local peer connection object rtcPeerConnection');
-}
-
-function setLocalAndSendMessage(answerSDP) {
-  rtcPeerConnection.setLocalDescription(answerSDP);
-  sendSignalMessage({ "type": "answer", "sdp": answerSDP });
-}
-
-function onrtcPeerDataChannelStateChange() {
-  var readyState = rtcPeerDataChannel.readyState;
-  trace('Send channel state is: ' + readyState);
 }
 
 function trace(text) {
