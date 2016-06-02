@@ -117,8 +117,7 @@ function startMediaStream() {
   }).then(function (stream) {
     window.localStream = localStream = stream;
     localVideo = addVideoElement();
-    localVideo.muted = true;
-    localVideo.src = window.URL.createObjectURL(localStream);
+    localVideo.src = window.URL.createObjectURL(new MediaStream(localStream.getVideoTracks()));
     createRTCConnection();
     createOffer();
     videoCallBtn.style["background-color"] = "red";
@@ -163,7 +162,6 @@ function createRTCConnection() {
     rtcConnection.onaddstream = function (event) {
       window.remoteStream = remoteStream = event.stream;
       remoteVideo = addVideoElement();
-      remoteVideo.muted = false;
       remoteVideo.src = window.URL.createObjectURL(remoteStream);
     };
     if (localStream) {
