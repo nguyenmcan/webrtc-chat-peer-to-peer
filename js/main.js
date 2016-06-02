@@ -81,7 +81,6 @@ var signalService = new WebRTCSignaling(socket);
 
 signalService.onoffer = function (sdp) {
   createAnswer(sdp);
-  videoCallBtn.disabled = true;
 }
 
 signalService.onanswer = function (sdp) {
@@ -102,7 +101,17 @@ signalService.connect();
 
 function startVideoCall() {
   if (!isVideoCall) {
-    startMediaStream();
+    startMediaStream(function (stream) {
+      window.localStream = localStream = stream;
+      localVideo = addVideoElement();
+      localVideo.src = window.URL.createObjectURL(new MediaStream(localStream.getVideoTracks()));
+      createRTCConnection();
+      createOffer();
+      videoCallBtn.style["background-color"] = "red";
+      videoCallBtn.textContent = "Stop Call";
+      isVideoCall = true;
+      trace("Add localStream");
+    });
     chatRoom.broadcast("Start video call.");
   } else {
     stopMediaStream();
@@ -110,20 +119,11 @@ function startVideoCall() {
   }
 }
 
-function startMediaStream() {
+function startMediaStream(callback) {
   navigator.mediaDevices.getUserMedia({
     audio: true,
     video: true
-  }).then(function (stream) {
-    window.localStream = localStream = stream;
-    localVideo = addVideoElement();
-    localVideo.src = window.URL.createObjectURL(new MediaStream(localStream.getVideoTracks()));
-    createRTCConnection();
-    createOffer();
-    videoCallBtn.style["background-color"] = "red";
-    videoCallBtn.textContent = "Stop Call";
-    isVideoCall = true;
-  })
+  }).then(callback);
 }
 
 function stopMediaStream() {
@@ -163,6 +163,7 @@ function createRTCConnection() {
       window.remoteStream = remoteStream = event.stream;
       remoteVideo = addVideoElement();
       remoteVideo.src = window.URL.createObjectURL(remoteStream);
+      trace("Add remoteStream");
     };
     if (localStream) {
       rtcConnection.addStream(localStream);
@@ -186,11 +187,20 @@ function createOffer() {
 }
 
 function createAnswer(offerSDP) {
-  createRTCConnection();
-  rtcConnection.setRemoteDescription(new RTCSessionDescription(offerSDP));
-  rtcConnection.createAnswer().then(function (answerSDP) {
-    rtcConnection.setLocalDescription(answerSDP);
-    signalService.sendAnswer(answerSDP);
+  startMediaStream(function (stream) {
+    window.localStream = localStream = stream;
+    localVideo = addVideoElement();
+    localVideo.src = window.URL.createObjectURL(new MediaStream(localStream.getVideoTracks()));
+    createRTCConnection();
+    rtcConnection.setRemoteDescription(new RTCSessionDescription(offerSDP));
+    rtcConnection.createAnswer().then(function (answerSDP) {
+      rtcConnection.setLocalDescription(answerSDP);
+      signalService.sendAnswer(answerSDP);
+    });
+    videoCallBtn.style["background-color"] = "red";
+    videoCallBtn.textContent = "Stop Call";
+    isVideoCall = true;
+    trace("Add localStream");
   });
   trace(">>>> Create answer!");
 }
