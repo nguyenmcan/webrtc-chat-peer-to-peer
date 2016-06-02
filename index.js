@@ -40,10 +40,15 @@ io.sockets.on('connection', function (socket) {
     log(socket.user + ' said: ' + message);
     socket.broadcast.to(socket.room).emit('message', socket.user, message);
   });
+  
+  socket.on('broadcast', function (message) {
+    log(socket.user + ' said: ' + message);
+    io.sockets.to(socket.room).emit('message', "system", message);
+  });  
 
   socket.on('disconnect', function () {
     if (socket.user) {
-      socket.broadcast.to(socket.room).emit('leaved', "system", socket.user + " leaved room!");
+      io.sockets.to(socket.room).emit('leaved', "system", socket.user + " leaved room!");
     }
   });
 
@@ -67,8 +72,8 @@ io.sockets.on('connection', function (socket) {
       socket.room = room;
       socket.user = user;
       socket.emit('joined', room, socket.id);
-      socket.broadcast.to(socket.room).emit('message', "system", socket.user + " joined room!");
       roomSize++;
+      io.sockets.to(socket.room).emit('message', "system", socket.user + " joined room!");
       log('User ' + user + ' joined room ' + room);
     } else {
       socket.emit('error', "Full room. Please select other room!");

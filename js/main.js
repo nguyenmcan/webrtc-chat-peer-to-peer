@@ -21,11 +21,9 @@ var chatRoom = new ChatRoom(socket);
 function openChatScreen(room, user, callback) {
   chatRoom.oncreated = function (user, socketId) {
     callback(user, null);
-    displayMessage("created room!");
   }
   chatRoom.onjoined = function (user, socketId) {
     callback(user, null);
-    displayMessage("joined room!");
   }
   chatRoom.onleaved = function (user, message) {
     displayMessage("[" + user + "]: " + message);
@@ -51,7 +49,7 @@ function sendMessage() {
 function displayMessage(message) {
   var span = document.createElement("span");
   var br = document.createElement("br");
-  span.textContent = message;
+  span.textContent = "> " + message;
   displayMsg.appendChild(span);
   displayMsg.appendChild(br);
   span.scrollIntoView();
@@ -111,8 +109,10 @@ signalService.connect();
 function startVideoCall() {
   if (!isVideoCall) {
     startMediaStream();
+    chatRoom.broadcast("Start video call.");
   } else {
     stopMediaStream();
+    chatRoom.broadcast("Stop video call.");
   }
 }
 
@@ -143,7 +143,7 @@ function stopMediaStream() {
 
   closeRTCConnection();
   signalService.closeConnect();
-
+  
   videoCallBtn.disabled = false;
   videoCallBtn.style["background-color"] = "#00FF3A";
   videoCallBtn.textContent = "Start Call";

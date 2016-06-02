@@ -31,5 +31,11 @@ ChatRoom.prototype.send = function (message) {
     }
 }
 
+ChatRoom.prototype.broadcast = function (message) {
+    if (this.socket_io) {
+        this.socket_io.emit("broadcast", message);
+    }
+}
+
 
 
