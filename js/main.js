@@ -58,7 +58,7 @@ function displayMessage(message) {
 function addVideoElement() {
   var video = document.createElement("video");
   var br = document.createElement("br");
-  video.style = "margin-left: 5px; width:200px";
+  video.style = "margin-left: 5px; width:200px; height: 150px; object-fit: cover";
   video.autoplay = true;
   videoDisplay.appendChild(video);
   videoDisplay.appendChild(br);
@@ -123,8 +123,12 @@ function startMediaStream(callback) {
   navigator.mediaDevices.getUserMedia({
     audio: true,
     video: {
-      width: { min: 640, ideal: 640, max: 640 },
-      height: { min: 480, ideal: 480, max: 480 },
+      mandatory: {
+        minWidth: 640,
+        minHeight: 480,
+        maxWidth: 640,
+        maxHeight: 480
+      },
       facingMode: "user"
     }
   }).then(callback);
