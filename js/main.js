@@ -123,8 +123,9 @@ function startMediaStream(callback) {
   navigator.mediaDevices.getUserMedia({
     audio: true,
     video: {
-      width: { min: 640, max: 640 },
-      height: { min: 480, max: 480 }
+      width: { min: 640, ideal: 640, max: 640 },
+      height: { min: 480, ideal: 480, max: 480 },
+      facingMode: "user"
     }
   }).then(callback);
 }
