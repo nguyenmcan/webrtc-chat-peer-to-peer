@@ -55,19 +55,13 @@ function displayMessage(message) {
   span.scrollIntoView();
 }
 
-function addVideoElement(stream) {
+function addVideoElement() {
   var video = document.createElement("video");
   var br = document.createElement("br");
   video.style = "margin-left: 5px; width:200px";
   video.autoplay = true;
   videoDisplay.appendChild(video);
   videoDisplay.appendChild(br);
-  if (window.URL) {
-    video.src = window.URL.createObjectURL(stream);
-  } else {
-    video.srcObject = stream;
-  }
-  trace("Add remote stream! + " + stream);
   return video;
 }
 
@@ -122,7 +116,8 @@ function startMediaStream() {
     video: true
   }).then(function (stream) {
     window.localStream = localStream = stream;
-    localVideo = addVideoElement(localStream);
+    localVideo = addVideoElement();
+    localVideo.src = window.URL.createObjectURL(localStream.getVideoTracks()[0]);
     createRTCConnection();
     createOffer();
     videoCallBtn.style["background-color"] = "red";
@@ -143,7 +138,7 @@ function stopMediaStream() {
 
   closeRTCConnection();
   signalService.closeConnect();
-  
+
   videoCallBtn.disabled = false;
   videoCallBtn.style["background-color"] = "#00FF3A";
   videoCallBtn.textContent = "Start Call";
@@ -166,7 +161,8 @@ function createRTCConnection() {
     };
     rtcConnection.onaddstream = function (event) {
       window.remoteStream = remoteStream = event.stream;
-      remoteVideo = addVideoElement(remoteStream);
+      remoteVideo = addVideoElement();
+      remoteVideo.src = window.URL.createObjectURL(remoteStream);
     };
     if (localStream) {
       rtcConnection.addStream(localStream);
