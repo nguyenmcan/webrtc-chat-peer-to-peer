@@ -8,12 +8,19 @@
 
   <style>
     dialog {
-      width: 500px;
       background: #e8e8e8;
       border: 1px solid #dadada;
       font-family: sans-serif;
-      padding: 5px 10px 20px 20px;
-      margin-top: 50px;
+      padding: 10px 20px;
+      margin-top: 100px;
+    }
+    
+    #localVideo {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 200px;
+      background-color: rgb(102, 51, 153);
     }
   </style>
 </head>
@@ -23,15 +30,15 @@
   <dialog id="popupDialog">
     <h3>Input room and user name!</h3>
     <p id="roomLabel">Enter room name:</p>
-    <input type="text" style="width: 200px; height: 20px" id="roomName" value="test" />
+    <input type="text" style="width: 250px; height: 30px; padding: 5px" id="roomName" value="test" />
     <p id="userLabel">Enter user name:</p>
-    <input type="text" style="width: 200px; height: 20px" id="userName" value="test" />
+    <input type="text" style="width: 250px; height: 30px; padding: 5px" id="userName" value="test" />
     <br/>
-    <button id="exit" style="margin-left: 240px;margin-top: 10px;width: 50px;height: 25px;" autofocus>OK</button>
+    <button id="connectBtn" style="margin-left: 100px;margin-top: 20px;width: 100px;height: 30px;" autofocus>Connect</button>
   </dialog>
 
-  <div id="chatScreen" style="display: none; padding: 5px">
-    <div style="display: inline-block; width: 500px">
+  <div id="chatScreen" style="display: none; padding: 5px; text-align: center">
+    <!--<div style="display: inline-block; width: 500px">
       <div id="displayMsg" style="overflow-y:scroll; height:305px; background-color: #FFEBCD; color: blue">
       </div>
       <div style="margin-top: 5px">
@@ -43,7 +50,13 @@
       <br/>
     </div>
     <div id="videoDisplay" style="display: inline-block; position: absolute">
-    </div>
+    </div>-->
+    <video id="localVideo" poster="http://2.bp.blogspot.com/-V31y2Ef4Ad0/VZservQf70I/AAAAAAAAdu8/ErI--hbXwfE/s1600/OpenCamera1.png" autoplay>
+    </video>
+    <video id="remoteVideo" poster="http://2.bp.blogspot.com/-V31y2Ef4Ad0/VZservQf70I/AAAAAAAAdu8/ErI--hbXwfE/s1600/OpenCamera1.png" autoplay>
+    </video>
+    <br/>
+    <button id="stopCall" style="background-color: rgb(255, 15, 0);height: 50px;width: 200px;color: white;font-stretch: bold;font-weight: bold;">Stop Call</button>
   </div>
 
   <script src="js/lib/adapter.js"></script>
@@ -54,7 +67,7 @@
 
   <script type="text/javascript">
     // createSignallingConnection
-	  trace('Created signaling connection');
+	  // trace('Created signaling connection');
     // createSignalingConnection();
     
     // create room
@@ -65,9 +78,9 @@
     var roomLabel = document.getElementById('roomLabel');
     var userLabel = document.getElementById('userLabel');  
     
-    document.getElementById('exit').onclick = function() {
+    document.getElementById('connectBtn').onclick = function() {
         if (roomInput.value != "" && userInput.value != "") {
-          openChatScreen(roomInput.value, userInput.value, function (message, error) {
+          startVideoCall(roomInput.value, userInput.value, function (message, error) {
              if(error) {
                alert(error);
                dialog.show();

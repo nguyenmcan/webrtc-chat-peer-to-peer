@@ -64,15 +64,14 @@ io.sockets.on('connection', function (socket) {
       socket.join(room);
       socket.room = room;
       socket.user = user;
-      socket.emit('created', room, socket.id);
       roomSize++;
       log('User ' + user + ' created room ' + room);
     } else if (roomSize === 1) {
       socket.join(room);
       socket.room = room;
       socket.user = user;
-      socket.emit('joined', room, socket.id);
       roomSize++;
+      socket.broadcast.to(socket.room).emit('joined', socket.user);
       io.sockets.to(socket.room).emit('message', "system", socket.user + " joined room!");
       log('User ' + user + ' joined room ' + room);
     } else {

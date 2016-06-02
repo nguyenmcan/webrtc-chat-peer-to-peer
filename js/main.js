@@ -10,63 +10,6 @@ var remoteVideo = document.querySelector('video#remoteVideo');
 var sendMsgBtn = document.querySelector('button#sendMsg');
 var videoCallBtn = document.querySelector('button#videoCall');
 
-sendMsgBtn.onclick = sendMessage;
-videoCallBtn.onclick = startVideoCall;
-
-//////////////////// CHAT ROOM ///////////////////////
-
-var socket = io.connect();
-var chatRoom = new ChatRoom(socket);
-
-function openChatScreen(room, user, callback) {
-  chatRoom.oncreated = function (user, socketId) {
-    callback(user, null);
-  }
-  chatRoom.onjoined = function (user, socketId) {
-    callback(user, null);
-  }
-  chatRoom.onleaved = function (user, message) {
-    displayMessage("[" + user + "]: " + message);
-  }
-  chatRoom.onerror = function (error) {
-    callback(null, error);
-  }
-  chatRoom.onmessage = function (user, message) {
-    displayMessage("[" + user + "]: " + message);
-  }
-  chatRoom.createOrJoin(room, user);
-}
-
-function sendMessage() {
-  var message = inputMsg.value;
-  if (message) {
-    chatRoom.send(message);
-    displayMessage("[" + chatRoom.user + "]: " + inputMsg.value);
-    inputMsg.value = "";
-  }
-}
-
-function displayMessage(message) {
-  var span = document.createElement("span");
-  var br = document.createElement("br");
-  span.textContent = "> " + message;
-  displayMsg.appendChild(span);
-  displayMsg.appendChild(br);
-  span.scrollIntoView();
-}
-
-function addVideoElement() {
-  var video = document.createElement("video");
-  var br = document.createElement("br");
-  video.style = "margin-left: 5px; width:200px; height: 150px; object-fit: cover";
-  video.autoplay = true;
-  videoDisplay.appendChild(video);
-  videoDisplay.appendChild(br);
-  return video;
-}
-
-///////////////////////////////////////////
-
 var isVideoCall = false;
 var initiator = false;
 var rtcConnection;
@@ -75,9 +18,10 @@ var dataConstraint;
 var servers = { "iceServers": [{ "urls": ["stun:192.168.38.162:3478"] }], "certificates": [] };
 var localStream;
 var remoteStream;
-var signalService = new WebRTCSignaling(socket);
 
 //////////////// SIGNALING ////////////////
+var socket = io.connect();
+var signalService = new WebRTCSignaling(socket);
 
 signalService.onoffer = function (sdp) {
   createAnswer(sdp);
@@ -95,28 +39,22 @@ signalService.onclose = function () {
   stopMediaStream();
 }
 
-signalService.connect();
+signalService.onjoined = function (user) {
+  createRTCConnection();
+  createOffer();
+  trace("signalService.onjoined");
+}
 
 ////////////////////////////////////////////
 
-function startVideoCall() {
-  if (!isVideoCall) {
-    startMediaStream(function (stream) {
-      window.localStream = localStream = stream;
-      localVideo = addVideoElement();
-      localVideo.src = window.URL.createObjectURL(new MediaStream(localStream.getVideoTracks()));
-      createRTCConnection();
-      createOffer();
-      videoCallBtn.style["background-color"] = "red";
-      videoCallBtn.textContent = "Stop Call";
-      isVideoCall = true;
-      trace("Add localStream");
-    });
-    chatRoom.broadcast("Start video call.");
-  } else {
-    stopMediaStream();
-    chatRoom.broadcast("Stop video call.");
-  }
+function startVideoCall(room, user, callback) {
+  startMediaStream(function (stream) {
+    window.localStream = localStream = stream;
+    localVideo.src = window.URL.createObjectURL(new MediaStream(localStream.getVideoTracks()));
+    signalService.connect(room, user);
+    trace("startVideoCall!");
+    callback("OK", null);
+  });
 }
 
 function startMediaStream(callback) {
@@ -147,9 +85,6 @@ function stopMediaStream() {
   closeRTCConnection();
   signalService.closeConnect();
 
-  videoCallBtn.disabled = false;
-  videoCallBtn.style["background-color"] = "#00FF3A";
-  videoCallBtn.textContent = "Start Call";
   isVideoCall = false;
   videoDisplay.innerHTML = null;
   trace("Remove localStream");
@@ -169,7 +104,6 @@ function createRTCConnection() {
     };
     rtcConnection.onaddstream = function (event) {
       window.remoteStream = remoteStream = event.stream;
-      remoteVideo = addVideoElement();
       remoteVideo.src = window.URL.createObjectURL(remoteStream);
       trace("Add remoteStream");
     };
@@ -197,7 +131,6 @@ function createOffer() {
 function createAnswer(offerSDP) {
   startMediaStream(function (stream) {
     window.localStream = localStream = stream;
-    localVideo = addVideoElement();
     localVideo.src = window.URL.createObjectURL(new MediaStream(localStream.getVideoTracks()));
     createRTCConnection();
     rtcConnection.setRemoteDescription(new RTCSessionDescription(offerSDP));
@@ -205,8 +138,6 @@ function createAnswer(offerSDP) {
       rtcConnection.setLocalDescription(answerSDP);
       signalService.sendAnswer(answerSDP);
     });
-    videoCallBtn.style["background-color"] = "red";
-    videoCallBtn.textContent = "Stop Call";
     isVideoCall = true;
     trace("Add localStream");
   });

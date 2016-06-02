@@ -3,7 +3,7 @@ var WebRTCSignaling = function (socket) {
     this.socket_io = socket;
 }
 
-WebRTCSignaling.prototype.connect = function () {
+WebRTCSignaling.prototype.connect = function (room, user) {
     var o = this;
     this.socket_io.on('offer', function (message) {
         var msg = JSON.parse(message);
@@ -17,12 +17,18 @@ WebRTCSignaling.prototype.connect = function () {
         var msg = JSON.parse(message);
         o.oncandidate(msg);
     });
+    this.socket_io.on('joined', function (user) {
+        o.onjoined(user);
+    });    
     this.socket_io.on('rtc-close', function () {
         o.onclose();
     });
+    this.socket_io.emit('create or join', room, user);
 }
 
 WebRTCSignaling.prototype.onoffer = function (description) { }
+
+WebRTCSignaling.prototype.onjoined = function (user) { }
 
 WebRTCSignaling.prototype.onclose = function () { }
 
