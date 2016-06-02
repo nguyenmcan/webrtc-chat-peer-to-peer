@@ -123,8 +123,8 @@ function startMediaStream(callback) {
   navigator.mediaDevices.getUserMedia({
     audio: true,
     video: {
-      width: { min: 640, max: 960 },
-      height: { min: 480, max: 720 }
+      width: { min: 640, max: 640 },
+      height: { min: 480, max: 480 }
     }
   }).then(callback);
 }
