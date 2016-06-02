@@ -5,8 +5,9 @@
 var displayMsg = document.querySelector('div#displayMsg');
 var videoDisplay = document.querySelector('div#videoDisplay');
 var inputMsg = document.querySelector('textarea#inputMsg');
-var localVideo = document.querySelector('video#localVideo');
-var remoteVideo = document.querySelector('video#remoteVideo');
+var localVideo = document.querySelector('video#local-video');
+var remoteVideo = document.querySelector('video#remote-video');
+var miniVideo = document.querySelector('video#mini-video');
 var sendMsgBtn = document.querySelector('button#sendMsg');
 var videoCallBtn = document.querySelector('button#videoCall');
 
@@ -14,7 +15,7 @@ var isVideoCall = false;
 var initiator = false;
 var rtcConnection;
 var pcConstraint = { "optional": [] };
-var dataConstraint;
+var mediaConstraints = { "audio": true, "video": { "optional": [{ "minWidth": "1280" }, { "minHeight": "720" }], "mandatory": {} } }
 var servers = { "iceServers": [{ "urls": ["stun:192.168.38.162:3478"] }], "certificates": [] };
 var localStream;
 var remoteStream;
@@ -58,18 +59,7 @@ function startVideoCall(room, user, callback) {
 }
 
 function startMediaStream(callback) {
-  navigator.mediaDevices.getUserMedia({
-    audio: true,
-    video: {
-      mandatory: {
-        minWidth: 640,
-        minHeight: 480,
-        maxWidth: 640,
-        maxHeight: 480
-      },
-      facingMode: "user"
-    }
-  }).then(callback);
+  navigator.mediaDevices.getUserMedia(mediaConstraints).then(callback);
 }
 
 function stopMediaStream() {
