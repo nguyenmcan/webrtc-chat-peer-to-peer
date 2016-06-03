@@ -9,7 +9,7 @@
   <style>
     dialog {
       background: #e8e8e8;
-      border: 1px solid #dadada;
+      border: none;
       font-family: sans-serif;
       padding: 10px 20px;
       margin-top: 100px;
@@ -27,13 +27,14 @@
       -o-transform: scale(-1, 1);
       -webkit-transform: scale(-1, 1);
       transform: scale(-1, 1);
+      position: absolute;
       width: 100%;
     }
     
     #mini-video {
       border: 1px solid gray;
       bottom: 20px;
-      left: 20px;
+      right: 20px;
       /* video div is flipped horizontally when active*/
       max-height: 17%;
       max-width: 17%;
@@ -75,13 +76,12 @@
 <body>
 
   <dialog id="popupDialog">
-    <h3>Input room and user name!</h3>
-    <p id="roomLabel">Enter room name:</p>
-    <input type="text" style="width: 250px; height: 30px; padding: 5px" id="roomName" value="test" />
-    <p id="userLabel">Enter user name:</p>
-    <input type="text" style="width: 250px; height: 30px; padding: 5px" id="userName" value="test" />
+    <h3 id="roomLabel">Enter room id:</h3>
+    <input type="text" style="width: 250px; height: 30px; padding: 5px; border: none;font-size: large" id="roomName" value=""
+    />
     <br/>
-    <button id="connectBtn" style="margin-left: 100px;margin-top: 20px;width: 100px;height: 30px;" autofocus>Connect</button>
+    <button id="connectBtn" style="font-size: large;margin-left:90px;margin-top: 20px;width: 100px;height: 30px;background-color:rgb(191, 191, 191); border:none; border-radius:2px"
+      autofocus>Connect</button>
   </dialog>
 
   <div id="chatScreen" style="display: none;">
@@ -91,6 +91,8 @@
     </video>
     <video id="mini-video" autoplay>
     </video>
+    <p id="notifyMsg" style="z-index: 999; padding: 5px;position: absolute; bottom: 0px; left: 10px; color: white; font-weight: bold; background-color: black">
+    </p>
   </div>
 
   <!--<button id="stopCall" style="background-color: rgb(255, 15, 0);height: 50px;width: 200px;color: white;font-stretch: bold;font-weight: bold;">Stop Call</button>-->
@@ -102,16 +104,19 @@
   <script src="js/main.js"></script>
 
   <script type="text/javascript">
+    var randomRoom = Math.floor((Math.random() * 100000) + 99999);
+  
     var chatScreen = document.getElementById('chatScreen');  
     var dialog = document.getElementById('popupDialog');  
     var roomInput = document.getElementById('roomName');
-    var userInput = document.getElementById('userName');
     var roomLabel = document.getElementById('roomLabel');
-    var userLabel = document.getElementById('userLabel');  
+    var notifyMsg = document.getElementById('notifyMsg');  
     
     document.getElementById('connectBtn').onclick = function() {
-        if (roomInput.value != "" && userInput.value != "") {
-          startVideoCall(roomInput.value, userInput.value, function (message, error) {
+        if (roomInput.value != "") {
+          var roomName = roomInput.value;
+          var userName = "user-" + Math.floor((Math.random() * 100000) + 99999);
+          startVideoCall(roomName, userName, function (message, error) {
              if(error) {
                alert(error);
                dialog.show();
@@ -120,20 +125,13 @@
                dialog.close();
              }
           });
+          notifyMsg.textContent = "Room Id: " + roomName;
         } else {
-          if(roomInput.value == "") {
-            roomLabel.style.color = "red";
-          } else {
-            roomLabel.style.color = "black";
-          }
-          if(userInput.value == "") {
-            userLabel.style.color = "red";
-          } else {
-            userLabel.style.color = "black";
-          }
+           roomLabel.style.color = "red";
         }
     };
     
+    roomInput.value = randomRoom;
     dialog.show();
   </script>
 

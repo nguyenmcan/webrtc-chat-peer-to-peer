@@ -8,7 +8,6 @@ var inputMsg = document.querySelector('textarea#inputMsg');
 var localVideo = document.querySelector('video#local-video');
 var remoteVideo = document.querySelector('video#remote-video');
 var miniVideo = document.querySelector('video#mini-video');
-var sendMsgBtn = document.querySelector('button#sendMsg');
 var videoCallBtn = document.querySelector('button#videoCall');
 
 var isVideoCall = false;
@@ -21,16 +20,7 @@ var localStream;
 var remoteStream;
 
 //////////////// SIGNALING ////////////////
-var socket = io.connect();
-var signalService = new WebRTCSignaling(socket);
-
-signalService.onoffer = function (sdp) {
-  createAnswer(sdp);
-}
-
-signalService.onanswer = function (sdp) {
-  rtcConnection.setRemoteDescription(new RTCSessionDescription(sdp));
-}
+var signalService = new WebRTCSignaling(io.connect());
 
 signalService.oncandidate = function (candidate) {
   rtcConnection.addIceCandidate(new RTCIceCandidate(candidate));
@@ -40,10 +30,18 @@ signalService.onclose = function () {
   stopMediaStream();
 }
 
+signalService.onoffer = function (sdp) {
+  createRTCConnection();
+  createAnswer(sdp);
+}
+
+signalService.onanswer = function (sdp) {
+  rtcConnection.setRemoteDescription(new RTCSessionDescription(sdp));
+}
+
 signalService.onjoined = function (user) {
   createRTCConnection();
   createOffer();
-  trace("signalService.onjoined");
 }
 
 ////////////////////////////////////////////
@@ -92,11 +90,7 @@ function createRTCConnection() {
     rtcConnection.onsignalingstatechange = function () {
       trace("Signaling state changed to: " + rtcConnection.signalingState);
     };
-    rtcConnection.onaddstream = function (event) {
-      window.remoteStream = remoteStream = event.stream;
-      remoteVideo.src = window.URL.createObjectURL(remoteStream);
-      trace("Add remoteStream");
-    };
+    rtcConnection.onaddstream = addRemoteStream;
     if (localStream) {
       rtcConnection.addStream(localStream);
     }
@@ -105,6 +99,18 @@ function createRTCConnection() {
     trace("Failed to create PeerConnection, exception: " + e.message);
     return;
   }
+}
+
+function addRemoteStream(event) {
+  window.remoteStream = remoteStream = event.stream;
+  remoteVideo.className += "active";
+  remoteVideo.src = window.URL.createObjectURL(remoteStream);
+
+  miniVideo.className += "active";
+  miniVideo.src = window.URL.createObjectURL(localStream);
+  localVideo.pause();
+
+  trace("Add remoteStream");
 }
 
 function closeRTCConnection() {
@@ -119,17 +125,10 @@ function createOffer() {
 }
 
 function createAnswer(offerSDP) {
-  startMediaStream(function (stream) {
-    window.localStream = localStream = stream;
-    localVideo.src = window.URL.createObjectURL(new MediaStream(localStream.getVideoTracks()));
-    createRTCConnection();
-    rtcConnection.setRemoteDescription(new RTCSessionDescription(offerSDP));
-    rtcConnection.createAnswer().then(function (answerSDP) {
-      rtcConnection.setLocalDescription(answerSDP);
-      signalService.sendAnswer(answerSDP);
-    });
-    isVideoCall = true;
-    trace("Add localStream");
+  rtcConnection.setRemoteDescription(new RTCSessionDescription(offerSDP));
+  rtcConnection.createAnswer().then(function (answerSDP) {
+    rtcConnection.setLocalDescription(answerSDP);
+    signalService.sendAnswer(answerSDP);
   });
   trace(">>>> Create answer!");
 }

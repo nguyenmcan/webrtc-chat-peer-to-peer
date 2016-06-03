@@ -20,7 +20,7 @@ WebRTCSignaling.prototype.connect = function (room, user) {
     this.socket_io.on('joined', function (user) {
         o.onjoined(user);
     });    
-    this.socket_io.on('rtc-close', function () {
+    this.socket_io.on('closed', function (user) {
         o.onclose();
     });
     this.socket_io.emit('create or join', room, user);

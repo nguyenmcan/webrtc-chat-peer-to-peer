@@ -31,20 +31,20 @@ io.sockets.on('connection', function (socket) {
   socket.on('offer', function (message) {
     socket.broadcast.to(socket.room).emit('offer', message);
   });
-  
-  socket.on('rtc-close', function () {
-    socket.broadcast.to(socket.room).emit('rtc-close');
-  });  
+
+  socket.on('close', function (user) {
+    socket.broadcast.to(socket.room).emit('close');
+  });
 
   socket.on('message', function (message) {
     log(socket.user + ' said: ' + message);
     socket.broadcast.to(socket.room).emit('message', socket.user, message);
   });
-  
+
   socket.on('broadcast', function (message) {
     log(socket.user + ' said: ' + message);
     io.sockets.to(socket.room).emit('message', "system", message);
-  });  
+  });
 
   socket.on('disconnect', function () {
     if (socket.user) {
@@ -65,14 +65,14 @@ io.sockets.on('connection', function (socket) {
       socket.room = room;
       socket.user = user;
       roomSize++;
+      socket.emit("created", user, socket.id);
       log('User ' + user + ' created room ' + room);
     } else if (roomSize === 1) {
       socket.join(room);
       socket.room = room;
       socket.user = user;
       roomSize++;
-      socket.broadcast.to(socket.room).emit('joined', socket.user);
-      io.sockets.to(socket.room).emit('message', "system", socket.user + " joined room!");
+      socket.emit("joined", user, socket.id);
       log('User ' + user + ' joined room ' + room);
     } else {
       socket.emit('error', "Full room. Please select other room!");
