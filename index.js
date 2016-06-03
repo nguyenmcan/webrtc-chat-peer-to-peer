@@ -14,9 +14,6 @@ var io = socketIO.listen(app);
 
 io.sockets.on('connection', function (socket) {
   function log(msg) {
-    //var array = ['Message from server:'];
-    //array.push.apply(array, arguments);
-    //socket.emit('log', array);
     console.log(msg);
   }
 
@@ -32,8 +29,8 @@ io.sockets.on('connection', function (socket) {
     socket.broadcast.to(socket.room).emit('offer', message);
   });
 
-  socket.on('close', function (user) {
-    socket.broadcast.to(socket.room).emit('close');
+  socket.on('close', function () {
+    socket.broadcast.to(socket.room).emit('closed', socket.user);
   });
 
   socket.on('message', function (message) {
@@ -43,23 +40,21 @@ io.sockets.on('connection', function (socket) {
 
   socket.on('broadcast', function (message) {
     log(socket.user + ' said: ' + message);
-    io.sockets.to(socket.room).emit('message', "system", message);
+    io.sockets.to(socket.room).emit('broadcast', message);
   });
 
   socket.on('disconnect', function () {
     if (socket.user) {
-      io.sockets.to(socket.room).emit('leaved', "system", socket.user + " leaved room!");
+      socket.broadcast.to(socket.room).emit('closed', socket.user);
+      log("Close connection! " + socket.user);
     }
   });
 
   socket.on('create or join', function (room, user) {
-    log('Request to create or join room ' + room + ' from ' + user);
-
     var roomSize = 0;
     if (io.sockets.adapter.rooms[room]) {
       roomSize = Object.keys(io.sockets.adapter.rooms[room]).length;
     }
-
     if (roomSize === 0) {
       socket.join(room);
       socket.room = room;
@@ -77,9 +72,7 @@ io.sockets.on('connection', function (socket) {
     } else {
       socket.emit('error', "Full room. Please select other room!");
     }
-
     log('Room ' + room + ' now has ' + roomSize + ' client(s)');
-
   });
 
   socket.on('ipaddr', function () {

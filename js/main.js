@@ -10,6 +10,16 @@ var remoteVideo = document.querySelector('video#remote-video');
 var miniVideo = document.querySelector('video#mini-video');
 var videoCallBtn = document.querySelector('button#videoCall');
 
+var incallButtonBar = document.querySelector('div#in-call-buttons');
+var hangupButtonBar = document.querySelector('div#hangup-buttons');
+
+var muteVideoBtn = document.querySelector('button#mute-video');
+var muteAudioBtn = document.querySelector('button#mute-audio');
+var hangupBtn = document.querySelector('button#hangup');
+
+var newRoomBtn = document.querySelector('button#new-room');
+var rejoinBtn = document.querySelector('button#rejoin');
+
 var isVideoCall = false;
 var initiator = false;
 var rtcConnection;
@@ -19,15 +29,54 @@ var servers = { "iceServers": [{ "urls": ["stun:192.168.38.162:3478"] }], "certi
 var localStream;
 var remoteStream;
 
+//////////////// Event Handler ////////////////
+
+muteVideoBtn.onclick = function (event) {
+  onMuteVideo().then(function (enabled) {
+    if (enabled) {
+      muteVideoBtn.classList.remove("inactive");
+    } else {
+      muteVideoBtn.classList.add("inactive");
+    }
+  });
+}
+
+muteAudioBtn.onclick = function (event) {
+  onMuteAudio().then(function (enabled) {
+    if (enabled) {
+      muteAudioBtn.classList.remove("inactive");
+    } else {
+      muteAudioBtn.classList.add("inactive");
+    }
+  });
+}
+
+hangupBtn.onclick = function (event) {
+  signalService.close();
+  stopVideoCall();
+  incallButtonBar.classList.remove("active");
+  hangupButtonBar.classList.add("active");
+}
+
+newRoomBtn.onclick = function (event) {
+  
+}
+
+rejoin.onclick = function (event) {
+  createRTCConnection();
+  startVideoCall();
+}
+
 //////////////// SIGNALING ////////////////
+
 var signalService = new WebRTCSignaling(io.connect());
 
 signalService.oncandidate = function (candidate) {
   rtcConnection.addIceCandidate(new RTCIceCandidate(candidate));
 }
 
-signalService.onclose = function () {
-  stopMediaStream();
+signalService.onclosed = function (user) {
+  stopVideoCall();
 }
 
 signalService.onoffer = function (sdp) {
@@ -39,43 +88,81 @@ signalService.onanswer = function (sdp) {
   rtcConnection.setRemoteDescription(new RTCSessionDescription(sdp));
 }
 
+signalService.oncreated = function (user) {
+  trace(user + " create room!");
+}
+
 signalService.onjoined = function (user) {
-  createRTCConnection();
-  createOffer();
+  startVideoCall();
+  trace(user + " joind room!");
 }
 
 ////////////////////////////////////////////
 
-function startVideoCall(room, user, callback) {
-  startMediaStream(function (stream) {
-    window.localStream = localStream = stream;
-    localVideo.src = window.URL.createObjectURL(new MediaStream(localStream.getVideoTracks()));
+function onMuteAudio() {
+  var audioTracks = localStream.getAudioTracks();
+  if (audioTracks.length === 0) {
+    trace("No local audio available.");
+    return;
+  }
+  for (var i = 0; i < audioTracks.length; ++i) {
+    audioTracks[i].enabled = !audioTracks[i].enabled;
+  }
+  trace("Audio " + (audioTracks[0].enabled ? "unmuted." : "muted."));
+  return Promise.resolve(audioTracks[0].enabled);
+}
+
+function onMuteVideo() {
+  var videoTracks = localStream.getVideoTracks();
+  if (videoTracks.length === 0) {
+    trace("No local video available.");
+    return;
+  }
+  for (var i = 0; i < videoTracks.length; ++i) {
+    videoTracks[i].enabled = !videoTracks[i].enabled;
+  }
+  trace("Video " + (videoTracks[0].enabled ? "unmuted." : "muted."));
+  return Promise.resolve(videoTracks[0].enabled);
+}
+
+function startRTCSession(room, user) {
+  return startMediaStream().then(function () {
     signalService.connect(room, user);
-    trace("startVideoCall!");
-    callback("OK", null);
+    createRTCConnection();
   });
 }
 
-function startMediaStream(callback) {
-  navigator.mediaDevices.getUserMedia(mediaConstraints).then(callback);
+function startVideoCall() {
+  rtcConnection.addStream(localStream);
+  createOffer();
+  trace("Start video call!");
+}
+
+function stopVideoCall() {
+  localVideo.src = window.URL.createObjectURL(new MediaStream(localStream.getVideoTracks()));
+  localVideo.play();
+  remoteVideo.classList.remove("active");
+  remoteVideo.pause();
+  miniVideo.classList.remove("active");
+  miniVideo.pause();
+  rtcConnection.close();
+  incallButtonBar.classList.remove("active");
+  trace("Stop video call!");
+}
+
+function startMediaStream() {
+  return new Promise(function (resolve, reject) {
+    navigator.mediaDevices.getUserMedia(mediaConstraints).then(function (stream) {
+      localStream = stream;
+      localVideo.src = window.URL.createObjectURL(new MediaStream(localStream.getVideoTracks()));
+      trace("Start media stream!");
+      resolve();
+    });
+  });
 }
 
 function stopMediaStream() {
-  if (localStream) {
-    if (localStream.getVideoTracks()[0]) {
-      localStream.getVideoTracks()[0].stop();
-    }
-    if (localStream.getAudioTracks()[0]) {
-      localStream.getAudioTracks()[0].stop();
-    }
-  }
 
-  closeRTCConnection();
-  signalService.closeConnect();
-
-  isVideoCall = false;
-  videoDisplay.innerHTML = null;
-  trace("Remove localStream");
 }
 
 ////////////////////////////////////////////
@@ -84,16 +171,15 @@ function createRTCConnection() {
   try {
     rtcConnection = new RTCPeerConnection(servers, pcConstraint);
     rtcConnection.onicecandidate = onIceCandidate;
-    rtcConnection.onremovestream = function () {
-      trace("Remove stream!");
+    rtcConnection.onremovestream = function (e) {
+      trace("Remove stream!" + e.stream.id);
     };
     rtcConnection.onsignalingstatechange = function () {
       trace("Signaling state changed to: " + rtcConnection.signalingState);
     };
     rtcConnection.onaddstream = addRemoteStream;
-    if (localStream) {
-      rtcConnection.addStream(localStream);
-    }
+    rtcConnection.oniceconnectionstatechange = iceConnectionStateChange;
+    rtcConnection.onconnectionstatechange = connectionStateChange;
     trace('Created local peer connection object RTCPeerConnection');
   } catch (e) {
     trace("Failed to create PeerConnection, exception: " + e.message);
@@ -101,16 +187,23 @@ function createRTCConnection() {
   }
 }
 
+function iceConnectionStateChange(event) {
+  trace("iceconnectionstate: " + rtcConnection.iceConnectionState);
+};
+
+function connectionStateChange(event) {
+  trace("connectionStateChange: " + rtcConnection.connectionState);
+}
+
 function addRemoteStream(event) {
-  window.remoteStream = remoteStream = event.stream;
-  remoteVideo.className += "active";
+  remoteStream = event.stream;
+  remoteVideo.classList.add("active");
   remoteVideo.src = window.URL.createObjectURL(remoteStream);
-
-  miniVideo.className += "active";
-  miniVideo.src = window.URL.createObjectURL(localStream);
+  miniVideo.classList.add("active");
+  miniVideo.src = window.URL.createObjectURL(new MediaStream(localStream.getVideoTracks()));
   localVideo.pause();
-
-  trace("Add remoteStream");
+  incallButtonBar.classList.add("active");
+  trace("Add remoteStream " + event.stream.id);
 }
 
 function closeRTCConnection() {
@@ -125,6 +218,7 @@ function createOffer() {
 }
 
 function createAnswer(offerSDP) {
+  rtcConnection.addStream(localStream);
   rtcConnection.setRemoteDescription(new RTCSessionDescription(offerSDP));
   rtcConnection.createAnswer().then(function (answerSDP) {
     rtcConnection.setLocalDescription(answerSDP);

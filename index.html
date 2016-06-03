@@ -70,6 +70,19 @@
       opacity: 1;
       z-index: 1;
     }
+    
+    #in-call-buttons button.inactive {
+      background-color: #9E9E9E !important;
+      color: #000000 !important;
+    }
+    
+    #in-call-buttons.active {
+      display: block !important;
+    }
+    
+    #hangup-buttons.active {
+      display: block !important;
+    }
   </style>
 </head>
 
@@ -93,6 +106,15 @@
     </video>
     <p id="notifyMsg" style="z-index: 999; padding: 5px;position: absolute; bottom: 0px; left: 10px; color: white; font-weight: bold; background-color: black">
     </p>
+    <div id="hangup-buttons" style="display: none; z-index: 999; position: absolute; width: 100%; bottom: 200px; text-align: center">
+      <button id="new-room" style="background-color:#3B78E7;padding:10px;border:none;border-radius:10px;color:white">New Room</button>
+      <button id="rejoin" style="background-color:#3B78E7;padding:10px;border:none;border-radius:10px;color:white">Rejoin</button>
+    </div>
+    <div id="in-call-buttons" style="display: none; z-index: 999; position: absolute; width: 100%; bottom: 200px; text-align: center">
+      <button id="mute-audio" style="background-color:#3B78E7;padding:10px;border:none;border-radius:10px;color:white">Mute Audio</button>
+      <button id="mute-video" style="background-color:#3B78E7;padding:10px;border:none;border-radius:10px;color:white">Mute Video</button>
+      <button id="hangup" style="background-color:red;padding:10px;border:none;border-radius:10px;color:white">Hangup</button>
+    </div>
   </div>
 
   <!--<button id="stopCall" style="background-color: rgb(255, 15, 0);height: 50px;width: 200px;color: white;font-stretch: bold;font-weight: bold;">Stop Call</button>-->
@@ -116,14 +138,12 @@
         if (roomInput.value != "") {
           var roomName = roomInput.value;
           var userName = "user-" + Math.floor((Math.random() * 100000) + 99999);
-          startVideoCall(roomName, userName, function (message, error) {
-             if(error) {
+          startRTCSession(roomName, userName).then(function () {
+               chatScreen.style.display = "block";
+               dialog.close();            
+          }).catch(function (error) {
                alert(error);
                dialog.show();
-             } else { 
-               chatScreen.style.display = "block";
-               dialog.close();
-             }
           });
           notifyMsg.textContent = "Room Id: " + roomName;
         } else {
