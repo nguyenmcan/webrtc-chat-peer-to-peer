@@ -1,12 +1,19 @@
 'use strict';
 
+var fs = require('fs');
 var os = require('os');
 var nodeStatic = require('node-static');
-var http = require('http');
+var http = require('https');
 var socketIO = require('socket.io');
 
+var options = {
+  key: fs.readFileSync('ssl/key.pem'),
+  cert: fs.readFileSync('ssl/cert.pem')
+};
+
+
 var fileServer = new (nodeStatic.Server)();
-var app = http.createServer(function (req, res) {
+var app = http.createServer(options, function (req, res) {
   fileServer.serve(req, res);
 }).listen(8080);
 
