@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+  <title>Realtime Communication Demo</title>
+  <link rel="stylesheet" href="css/main.css" />
+
+  <style>
+    dialog {
+      background: #e8e8e8;
+      border: none;
+      font-family: sans-serif;
+      padding: 10px 20px;
+      margin-top: 100px;
+    }
+    
+    #local-video {
+      height: 100%;
+      max-height: 100%;
+      max-width: 100%;
+      object-fit: cover;
+      /* no letterboxing */
+      transition: opacity 1s;
+      -moz-transform: scale(-1, 1);
+      -ms-transform: scale(-1, 1);
+      -o-transform: scale(-1, 1);
+      -webkit-transform: scale(-1, 1);
+      transform: scale(-1, 1);
+      position: absolute;
+      width: 100%;
+    }
+    
+    #mini-video {
+      border: 1px solid gray;
+      bottom: 20px;
+      right: 20px;
+      /* video div is flipped horizontally when active*/
+      max-height: 17%;
+      max-width: 17%;
+      opacity: 0;
+      position: absolute;
+      transition: opacity 1s;
+    }
+    
+    #mini-video.active {
+      opacity: 1;
+      z-index: 2;
+    }
+    
+    #remote-video {
+      display: block;
+      height: 100%;
+      max-height: 100%;
+      max-width: 100%;
+      object-fit: cover;
+      /* no letterboxing */
+      opacity: 0;
+      position: absolute;
+      -moz-transform: rotateY(180deg);
+      -ms-transform: rotateY(180deg);
+      -o-transform: rotateY(180deg);
+      -webkit-transform: rotateY(180deg);
+      transform: rotateY(180deg);
+      transition: opacity 1s;
+      width: 100%;
+    }
+    
+    #remote-video.active {
+      opacity: 1;
+      z-index: 1;
+    }
+    
+    #in-call-buttons button.inactive {
+      background-color: #9E9E9E !important;
+      color: #000000 !important;
+    }
+    
+    #in-call-buttons.active {
+      display: block !important;
+    }
+    
+    #hangup-buttons.active {
+      display: block !important;
+    }
+  </style>
+</head>
+
+<body>
+
+  <dialog id="popupDialog">
+    <h3 id="roomLabel">Enter room id:</h3>
+    <input type="text" style="width: 250px; height: 30px; padding: 5px; border: none;font-size: large" id="roomName" value=""
+    />
+    <br/>
+    <button id="connectBtn" style="font-size: large;margin-left:90px;margin-top: 20px;width: 100px;height: 30px;background-color:rgb(191, 191, 191); border:none; border-radius:2px"
+      autofocus>Connect</button>
+  </dialog>
+
+  <div id="chatScreen" style="display: none;">
+    <video id="local-video" autoplay>
+    </video>
+    <video id="remote-video" autoplay>
+    </video>
+    <video id="mini-video" autoplay>
+    </video>
+    <p id="notifyMsg" style="z-index: 999; padding: 5px;position: absolute; bottom: 0px; left: 10px; color: white; font-weight: bold; background-color: black">
+    </p>
+    <div id="hangup-buttons" style="display: none; z-index: 999; position: absolute; width: 100%; bottom: 200px; text-align: center">
+      <button id="new-room" style="background-color:#3B78E7;padding:10px;border:none;border-radius:10px;color:white">New Room</button>
+      <button id="rejoin" style="background-color:#3B78E7;padding:10px;border:none;border-radius:10px;color:white">Rejoin</button>
+    </div>
+    <div id="in-call-buttons" style="display: none; z-index: 999; position: absolute; width: 100%; bottom: 200px; text-align: center">
+      <button id="mute-audio" style="background-color:#3B78E7;padding:10px;border:none;border-radius:10px;color:white">Mute Audio</button>
+      <button id="mute-video" style="background-color:#3B78E7;padding:10px;border:none;border-radius:10px;color:white">Mute Video</button>
+      <button id="hangup" style="background-color:red;padding:10px;border:none;border-radius:10px;color:white">Hangup</button>
+    </div>
+  </div>
+
+  <!--<button id="stopCall" style="background-color: rgb(255, 15, 0);height: 50px;width: 200px;color: white;font-stretch: bold;font-weight: bold;">Stop Call</button>-->
+
+  <script src="js/lib/adapter.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/chatroom.js"></script>
+  <script src="js/signaling.js"></script>
+  <script src="js/main.js"></script>
+
+  <script type="text/javascript">
+    var randomRoom = Math.floor((Math.random() * 100000) + 99999);
+  
+    var chatScreen = document.getElementById('chatScreen');  
+    var dialog = document.getElementById('popupDialog');  
+    var roomInput = document.getElementById('roomName');
+    var roomLabel = document.getElementById('roomLabel');
+    var notifyMsg = document.getElementById('notifyMsg');  
+    
+    document.getElementById('connectBtn').onclick = function() {
+        if (roomInput.value != "") {
+          var roomName = roomInput.value;
+          var userName = "user-" + Math.floor((Math.random() * 100000) + 99999);
+          startRTCSession(roomName, userName).then(function () {
+               chatScreen.style.display = "block";
+               dialog.close();            
+          }).catch(function (error) {
+               alert(error);
+               dialog.show();
+          });
+          notifyMsg.textContent = "Room Id: " + roomName;
+        } else {
+           roomLabel.style.color = "red";
+        }
+    };
+    
+    roomInput.value = randomRoom;
+    dialog.show();
+  </script>
+
+</body>
+
+</html>

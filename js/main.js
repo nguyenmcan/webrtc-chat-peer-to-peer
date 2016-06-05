@@ -1,7 +1,5 @@
 'use strict';
 
-///////////////////////////////////////////
-
 var displayMsg = document.querySelector('div#displayMsg');
 var videoDisplay = document.querySelector('div#videoDisplay');
 var inputMsg = document.querySelector('textarea#inputMsg');
@@ -59,7 +57,7 @@ hangupBtn.onclick = function (event) {
 }
 
 newRoomBtn.onclick = function (event) {
-  
+
 }
 
 rejoin.onclick = function (event) {
