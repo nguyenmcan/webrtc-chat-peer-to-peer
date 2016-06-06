@@ -2,142 +2,152 @@ doctype html
 html
   head
     title Realtime Communication Demo
-    link(rel="stylesheet", href="/css/main.css") 
+    link(rel="stylesheet", href="/css/main.css")
   
   body
-    
+    div#buttonBar(style="z-index: 999")
+      dialog#confirmDlg
+        button#homeBtn(style="margin-left:10px;background-color:#3B78E7;padding:15px;border:none;border-radius:50%;color:white") Back
+        button#joinBtn(style="margin-left:10px;background-color:#3B78E7;padding:15px;border:none;border-radius:50%;color:white") Join
+      dialog#controlDlg 
+        button#muteAudioBtn(style="background-color:#3B78E7;padding:10px;border:none;border-radius:10px;color:white") Mute Audio
+        button#muteVideoBtn(style="background-color:#3B78E7;padding:10px;border:none;border-radius:10px;color:white") Mute Video
+        button#hangupBtn(style="background-color:#3B78E7;padding:10px;border:none;border-radius:10px;color:white") Hangup      
+  
     div#chatScreen(style="display: block")
-      video#local-video(autoplay=true)
-      video#remote-video(autoplay=true)
-      video#mini-video(autoplay=true)
+      video#localVideo(autoplay=true)
+      video#remoteVideo(autoplay=true)
+      video#miniVideo(autoplay=true)
       
-      p#notifyMsg(style="z-index: 999; padding: 5px;position: absolute; bottom: 0px; left: 10px; color: white; font-weight: bold; background-color: black")
+    //- div#controlBtn(style="display: none; z-index: 999; position: absolute; width: 100%; bottom: 200px; text-align: center")
+    //-   button#muteAudioBtn(style="background-color:#3B78E7;padding:10px;border:none;border-radius:10px;color:white") Mute Audio
+    //-   button#muteVideoBtn(style="background-color:#3B78E7;padding:10px;border:none;border-radius:10px;color:white") Mute Video
+    //-   button#hangupBtn(style="background-color:#3B78E7;padding:10px;border:none;border-radius:10px;color:white") Hangup
       
-      div#hangup-buttons(style="display: none; z-index: 999; position: absolute; width: 100%; bottom: 200px; text-align: center")
-        button#new-room(style="background-color:#3B78E7;padding:10px;border:none;border-radius:10px;color:white") New Room
-        button#rejoin(style="background-color:#3B78E7;padding:10px;border:none;border-radius:10px;color:white") Rejoin
-      
-      div#in-call-buttons(style="display: none; z-index: 999; position: absolute; width: 100%; bottom: 200px; text-align: center")
-        button#mute-audio(style="background-color:#3B78E7;padding:10px;border:none;border-radius:10px;color:white") Mute Audio
-        button#mute-video(style="background-color:#3B78E7;padding:10px;border:none;border-radius:10px;color:white") Mute Video
-        button#hangup(style="background-color:#3B78E7;padding:10px;border:none;border-radius:10px;color:white") Hangup
-        
+    p#notifyMsg(style="z-index: 999; padding: 5px;position: absolute; bottom: 0px; left: 10px; color: white; font-weight: bold; background-color: black")      
+                
     script(src="/js/lib/adapter.js")
     script(src="/socket.io/socket.io.js")
-    script(src="/js/chatroom.js")
+    script(src="/js/room.js")
     script(src="/js/signaling.js")
     script(src="/js/webrtc.js")
+    script(src="/js/main.js")
 
-    script.
-    
+    script.    
       var videoDisplay = document.querySelector('div#videoDisplay');
-      var localVideo = document.querySelector('video#local-video');
-      var remoteVideo = document.querySelector('video#remote-video');
-      var miniVideo = document.querySelector('video#mini-video');
-      var videoCallBtn = document.querySelector('button#videoCall');
-      var incallButtonBar = document.querySelector('div#in-call-buttons');
-      var hangupButtonBar = document.querySelector('div#hangup-buttons');
-      var muteVideoBtn = document.querySelector('button#mute-video');
-      var muteAudioBtn = document.querySelector('button#mute-audio');
-      var hangupBtn = document.querySelector('button#hangup');
-      var newRoomBtn = document.querySelector('button#new-room');
-      var rejoinBtn = document.querySelector('button#rejoin');
+      var localVideo = document.querySelector('video#localVideo');
+      var remoteVideo = document.querySelector('video#remoteVideo');
+      var miniVideo = document.querySelector('video#miniVideo');
+      var muteVideoBtn = document.querySelector('button#muteVideoBtn');
+      var muteAudioBtn = document.querySelector('button#muteAudioBtn');
+      var hangupBtn = document.querySelector('button#hangupBtn');
+      var homeBtn = document.querySelector('button#homeBtn');
+      var joinBtn = document.querySelector('button#joinBtn');
+      var controlBtn = document.querySelector('div#controlDlg');
+      var confirmDlg = document.querySelector("dialog#confirmDlg");
+      var notifyMsg = document.querySelector("p#notifyMsg");
     
+      var localStream;
+      var remoteStream;      
       var roomId = #{roomId};
       var userId = Math.floor((Math.random() * 100000) + 99999);
       var mediaConstraints = { "audio": true, "video": { "optional": [{ "minWidth": "1280" }, { "minHeight": "720" }], "mandatory": {} } }
-      var servers = { "iceServers": [{ "urls": ["stun:192.168.38.162:3478"] }], "certificates": [] };
-      var localStream;
-      var remoteStream;
-      
-      var socket = io.connect("127.0.0.1:8080");
-      var signaling = new WebRTCSignaling(socket);
-      var webRTCClient = new WebRTCClient();
-     
-      signaling.oncandidate = function (candidate) {
-        webRTCClient.addIceCandidate(new RTCIceCandidate(candidate));
-      }
-      
-      signaling.onclosed = function (user) {
-        stopVideoCall();
-      }
-      
-      signaling.onoffer = function (sdp) {
-        webRTCClient.createRTCConnection(servers);
-        webRTCClient.createAnswer(sdp).then(function(sdp) {
-          signaling.sendAnswer(sdp);
+    
+      muteVideoBtn.onclick = function (event) {
+        onMuteVideo().then(function (enabled) {
+          if (enabled) {
+            muteVideoBtn.classList.remove("inactive");
+          } else {
+            muteVideoBtn.classList.add("inactive");
+          }
         });
       }
-      
-      signaling.onanswer = function (sdp) {
-        webRTCClient.setRemoteDescription(new RTCSessionDescription(sdp));
+
+      muteAudioBtn.onclick = function (event) {
+        onMuteAudio().then(function (enabled) {
+          if (enabled) {
+            muteAudioBtn.classList.remove("inactive");
+          } else {
+            muteAudioBtn.classList.add("inactive");
+          }
+        });
       }
-      
-      signaling.oncreated = function (user) {
-        trace(user + " create room!");
+
+      hangupBtn.onclick = function (event) {
+        signalService.closeRTC();
+        stopVideoCall();
+        confirmDlg.show();
+        controlBtn.close();
       }
-      
-      signaling.onjoined = function (user) {
+
+      homeBtn.onclick = function (event) {
+
+      }
+
+      joinBtn.onclick = function (event) {
+        createRTCConnection();
         startVideoCall();
-        trace(user + " joind room!");
+      }          
+      
+      function onRTCClosed(user) {
+        stopVideoCall();
       }      
       
-      webRTCClient.onIceCandidate = function(event) {
-        if (event.candidate) {
-          signaling.sendCandidate(event.candidate);
-          trace("onIceCandidate: " + event.candidate.candidate);
-        } else {
-          trace("End of candidates." + event);
-        }        
-      }      
-      
-      webRTCClient.addRemoteStream = function(event) {
-        remoteStream = event.stream;
+      function onJoinRoom(user, initator) {
+        if(!initator) {
+          startVideoCall();
+        }
+      }
+
+      function addRemoteStream(stream) {
+        remoteStream = stream;
         remoteVideo.src = window.URL.createObjectURL(remoteStream);
         miniVideo.src = window.URL.createObjectURL(new MediaStream(localStream.getVideoTracks()));
         localVideo.pause();
         remoteVideo.classList.add("active");
         miniVideo.classList.add("active");
-        incallButtonBar.classList.add("active");
-        trace("Add remoteStream " + event.stream.id);        
-      }
-      
-      function trace(text) {
-        if (text[text.length - 1] === '\n') {
-          text = text.substring(0, text.length - 1);
-        }
-        if (window.performance) {
-          var now = (window.performance.now() / 1000).toFixed(3);
-          console.log(now + ': ' + text);
-        } else {
-          console.log(text);
-        }
-      }
+        confirmDlg.close();
+        controlBtn.show();
+        trace("Add remoteStream " + event.stream.id);
+      }   
       
       function startVideoCall() {
         webRTCClient.createRTCConnection(servers);
         webRTCClient.addLocalStream(localStream);
-        webRTCClient.createOffer().then(function(sdp) {
+        webRTCClient.createOffer().then(function (sdp) {
           signaling.sendOffer(sdp);
         });
         trace("Start video call!");
-      }      
+      }
       
+      function stopVideoCall() {
+        localVideo.src = window.URL.createObjectURL(new MediaStream(localStream.getVideoTracks()));
+        localVideo.play();
+        remoteVideo.classList.remove("active");
+        remoteVideo.pause();
+        miniVideo.classList.remove("active");
+        miniVideo.pause();
+        rtcConnection.close();
+        incallButtonBar.classList.remove("active");
+        trace("Stop video call!");
+      }         
+
       function startMediaStream() {
-        return new Promise(function (resolve, reject) {
-          navigator.mediaDevices.getUserMedia(mediaConstraints).then(function (stream) {
-            localStream = stream;
-            localVideo.src = window.URL.createObjectURL(new MediaStream(localStream.getVideoTracks()));
-            localVideo.play();
-            trace("Start media stream!");
-            resolve(stream);
-          });
+        navigator.mediaDevices.getUserMedia(mediaConstraints).then(function (stream) {
+          localStream = stream;
+          //- if(stream.getVideoTracks().length == 0 || stream.getAudioTracks().length == 0) {
+          //-   alert("Can not access media devices!"); 
+          //-   window.location = "/";
+          //-   return;
+          //- }
+          localVideo.src = window.URL.createObjectURL(new MediaStream(stream.getVideoTracks()));
+          signaling.connect(roomId, userId);
+          trace("Start media stream!");            
         });
       }
       
-      // start media stream
-      startMediaStream().then(function (stream) {
-        signaling.connect(roomId, userId);
-      });      
+      startMediaStream();
+
+ 
       
             

@@ -41,7 +41,7 @@ WebRTCSignaling.prototype.oncreated = function (user) { }
 
 WebRTCSignaling.prototype.onclosed = function (user) { }
 
-WebRTCSignaling.prototype.close = function () {
+WebRTCSignaling.prototype.closeRTC = function () {
     this.socket_io.emit("close");
 }
 

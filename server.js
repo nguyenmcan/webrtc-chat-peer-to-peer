@@ -18,7 +18,7 @@ router.set('views', './views');
 router.set('view engine', 'jade');
 router.use(express.static(__dirname + '/public'));
 
-var appServer = http.createServer(router).listen(8080);
+var appServer = https.createServer(options, router).listen(8080);
 
 router.get("/", function (req, res) {
   res.render("index", {});
