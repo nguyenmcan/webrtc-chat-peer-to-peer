@@ -22,8 +22,6 @@ var isVideoCall = false;
 var initiator = false;
 var rtcConnection;
 var pcConstraint = { "optional": [] };
-var mediaConstraints = { "audio": true, "video": { "optional": [{ "minWidth": "1280" }, { "minHeight": "720" }], "mandatory": {} } }
-var servers = { "iceServers": [{ "urls": ["stun:192.168.38.162:3478"] }], "certificates": [] };
 var localStream;
 var remoteStream;
 
@@ -63,36 +61,6 @@ newRoomBtn.onclick = function (event) {
 rejoin.onclick = function (event) {
   createRTCConnection();
   startVideoCall();
-}
-
-//////////////// SIGNALING ////////////////
-
-var signalService = new WebRTCSignaling(io.connect());
-
-signalService.oncandidate = function (candidate) {
-  rtcConnection.addIceCandidate(new RTCIceCandidate(candidate));
-}
-
-signalService.onclosed = function (user) {
-  stopVideoCall();
-}
-
-signalService.onoffer = function (sdp) {
-  createRTCConnection();
-  createAnswer(sdp);
-}
-
-signalService.onanswer = function (sdp) {
-  rtcConnection.setRemoteDescription(new RTCSessionDescription(sdp));
-}
-
-signalService.oncreated = function (user) {
-  trace(user + " create room!");
-}
-
-signalService.onjoined = function (user) {
-  startVideoCall();
-  trace(user + " joind room!");
 }
 
 ////////////////////////////////////////////
@@ -148,26 +116,15 @@ function stopVideoCall() {
   trace("Stop video call!");
 }
 
-function startMediaStream() {
-  return new Promise(function (resolve, reject) {
-    navigator.mediaDevices.getUserMedia(mediaConstraints).then(function (stream) {
-      localStream = stream;
-      localVideo.src = window.URL.createObjectURL(new MediaStream(localStream.getVideoTracks()));
-      trace("Start media stream!");
-      resolve();
-    });
-  });
-}
-
 function stopMediaStream() {
 
 }
 
 ////////////////////////////////////////////
 
-function createRTCConnection() {
+function createRTCConnection(servers) {
   try {
-    rtcConnection = new RTCPeerConnection(servers, pcConstraint);
+    var rtcConnection = new RTCPeerConnection(servers, pcConstraint);
     rtcConnection.onicecandidate = onIceCandidate;
     rtcConnection.onremovestream = function (e) {
       trace("Remove stream!" + e.stream.id);
@@ -178,10 +135,10 @@ function createRTCConnection() {
     rtcConnection.onaddstream = addRemoteStream;
     rtcConnection.oniceconnectionstatechange = iceConnectionStateChange;
     rtcConnection.onconnectionstatechange = connectionStateChange;
-    trace('Created local peer connection object RTCPeerConnection');
+    return rtcConnection;
   } catch (e) {
     trace("Failed to create PeerConnection, exception: " + e.message);
-    return;
+    return null;
   }
 }
 

@@ -15,21 +15,21 @@ var options = {
 
 var router = express();
 router.set('views', './views');
+router.set('view engine', 'jade');
 router.use(express.static(__dirname + '/public'));
 
 var appServer = http.createServer(router).listen(8080);
 
 router.get("/", function (req, res) {
-  log(JSON.stringify(req.query));
+  res.render("index", {});
 })
 
 router.get("/index(.html)?", function (req, res) {
-  var content = fs.readFileSync('./views/index.html', "utf8");
-  res.send(content);
+  res.render("index", {});
 })
 
-router.get("/chatroom", function (req, res) {
-  log(JSON.stringify(req.query));
+router.get("/room/:id", function (req, res) {
+  res.render("room", { "roomId": req.params.id });
 })
 
 function log(msg) {

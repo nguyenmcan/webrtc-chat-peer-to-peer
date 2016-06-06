@@ -1,0 +1,330 @@
+0 info it worked if it ends with ok
+1 verbose cli [ '/usr/bin/nodejs',
+1 verbose cli   '/usr/bin/npm',
+1 verbose cli   'install',
+1 verbose cli   'jade',
+1 verbose cli   '--global' ]
+2 info using npm@1.4.21
+3 info using node@v0.10.25
+4 verbose cache add [ 'jade', null ]
+5 verbose cache add name=undefined spec="jade" args=["jade",null]
+6 verbose parsed url { protocol: null,
+6 verbose parsed url   slashes: null,
+6 verbose parsed url   auth: null,
+6 verbose parsed url   host: null,
+6 verbose parsed url   port: null,
+6 verbose parsed url   hostname: null,
+6 verbose parsed url   hash: null,
+6 verbose parsed url   search: null,
+6 verbose parsed url   query: null,
+6 verbose parsed url   pathname: 'jade',
+6 verbose parsed url   path: 'jade',
+6 verbose parsed url   href: 'jade' }
+7 silly lockFile 5bd60fae-jade jade
+8 verbose lock jade /home/nguyenminhcan/.npm/5bd60fae-jade.lock
+9 silly lockFile 5bd60fae-jade jade
+10 silly lockFile 5bd60fae-jade jade
+11 verbose addNamed [ 'jade', '' ]
+12 verbose addNamed [ null, '*' ]
+13 silly lockFile 51d481b2-jade jade@
+14 verbose lock jade@ /home/nguyenminhcan/.npm/51d481b2-jade.lock
+15 silly addNameRange { name: 'jade', range: '*', hasData: false }
+16 verbose request where is /jade
+17 verbose request registry https://registry.npmjs.org/
+18 verbose request id 31bffa16cc1c0d1a
+19 verbose url raw /jade
+20 verbose url resolving [ 'https://registry.npmjs.org/', './jade' ]
+21 verbose url resolved https://registry.npmjs.org/jade
+22 verbose request where is https://registry.npmjs.org/jade
+23 info trying registry request attempt 1 at 10:41:54
+24 http GET https://registry.npmjs.org/jade
+25 http 200 https://registry.npmjs.org/jade
+26 silly registry.get cb [ 200,
+26 silly registry.get   { server: 'CouchDB/1.5.0 (Erlang OTP/R16B03)',
+26 silly registry.get     etag: '"EUG8MY7O16GZEQ50RX7F2UD9P"',
+26 silly registry.get     'content-type': 'application/json',
+26 silly registry.get     'content-encoding': 'gzip',
+26 silly registry.get     'cache-control': 'max-age=300',
+26 silly registry.get     'content-length': '19485',
+26 silly registry.get     'accept-ranges': 'bytes',
+26 silly registry.get     date: 'Mon, 06 Jun 2016 03:41:55 GMT',
+26 silly registry.get     via: '1.1 varnish',
+26 silly registry.get     age: '12',
+26 silly registry.get     connection: 'keep-alive',
+26 silly registry.get     'x-served-by': 'cache-hkg6820-HKG',
+26 silly registry.get     'x-cache': 'HIT',
+26 silly registry.get     'x-cache-hits': '1',
+26 silly registry.get     'x-timer': 'S1465184515.231002,VS0,VE0',
+26 silly registry.get     vary: 'Accept-Encoding' } ]
+27 silly addNameRange number 2 { name: 'jade', range: '*', hasData: true }
+28 silly addNameRange versions [ 'jade',
+28 silly addNameRange   [ '0.0.1',
+28 silly addNameRange     '0.0.2',
+28 silly addNameRange     '0.1.0',
+28 silly addNameRange     '0.2.0',
+28 silly addNameRange     '0.2.1',
+28 silly addNameRange     '0.2.2',
+28 silly addNameRange     '0.2.3',
+28 silly addNameRange     '0.2.4',
+28 silly addNameRange     '0.3.0',
+28 silly addNameRange     '0.4.0',
+28 silly addNameRange     '0.4.1',
+28 silly addNameRange     '0.5.0',
+28 silly addNameRange     '0.5.1',
+28 silly addNameRange     '0.5.2',
+28 silly addNameRange     '0.5.3',
+28 silly addNameRange     '0.5.4',
+28 silly addNameRange     '0.5.5',
+28 silly addNameRange     '0.5.6',
+28 silly addNameRange     '0.5.7',
+28 silly addNameRange     '0.6.0',
+28 silly addNameRange     '0.6.1',
+28 silly addNameRange     '0.6.3',
+28 silly addNameRange     '0.7.0',
+28 silly addNameRange     '0.7.1',
+28 silly addNameRange     '0.8.0',
+28 silly addNameRange     '0.8.1',
+28 silly addNameRange     '0.8.2',
+28 silly addNameRange     '0.8.3',
+28 silly addNameRange     '0.8.4',
+28 silly addNameRange     '0.8.5',
+28 silly addNameRange     '0.8.6',
+28 silly addNameRange     '0.8.7',
+28 silly addNameRange     '0.8.8',
+28 silly addNameRange     '0.8.9',
+28 silly addNameRange     '0.9.0',
+28 silly addNameRange     '0.9.1',
+28 silly addNameRange     '0.9.2',
+28 silly addNameRange     '0.9.3',
+28 silly addNameRange     '0.10.0',
+28 silly addNameRange     '0.10.1',
+28 silly addNameRange     '0.10.2',
+28 silly addNameRange     '0.10.3',
+28 silly addNameRange     '0.10.4',
+28 silly addNameRange     '0.10.5',
+28 silly addNameRange     '0.10.6',
+28 silly addNameRange     '0.10.7',
+28 silly addNameRange     '0.11.0',
+28 silly addNameRange     '0.11.1',
+28 silly addNameRange     '0.12.0',
+28 silly addNameRange     '0.12.1',
+28 silly addNameRange     '0.12.2',
+28 silly addNameRange     '0.12.3',
+28 silly addNameRange     '0.12.4',
+28 silly addNameRange     '0.13.0',
+28 silly addNameRange     '0.14.0',
+28 silly addNameRange     '0.14.1',
+28 silly addNameRange     '0.14.2',
+28 silly addNameRange     '0.15.0',
+28 silly addNameRange     '0.15.1',
+28 silly addNameRange     '0.15.2',
+28 silly addNameRange     '0.15.3',
+28 silly addNameRange     '0.15.4',
+28 silly addNameRange     '0.16.0',
+28 silly addNameRange     '0.16.1',
+28 silly addNameRange     '0.16.2',
+28 silly addNameRange     '0.16.3',
+28 silly addNameRange     '0.16.4',
+28 silly addNameRange     '0.17.0',
+28 silly addNameRange     '0.18.0',
+28 silly addNameRange     '0.19.0',
+28 silly addNameRange     '0.20.0',
+28 silly addNameRange     '0.20.1',
+28 silly addNameRange     '0.20.2',
+28 silly addNameRange     '0.20.3',
+28 silly addNameRange     '0.21.0',
+28 silly addNameRange     '0.22.0',
+28 silly addNameRange     '0.22.1',
+28 silly addNameRange     '0.23.0',
+28 silly addNameRange     '0.24.0',
+28 silly addNameRange     '0.25.0',
+28 silly addNameRange     '0.26.0',
+28 silly addNameRange     '0.26.1',
+28 silly addNameRange     '0.26.2',
+28 silly addNameRange     '0.26.3',
+28 silly addNameRange     '0.27.0',
+28 silly addNameRange     '0.27.1',
+28 silly addNameRange     '0.27.2',
+28 silly addNameRange     '0.27.3',
+28 silly addNameRange     '0.27.4',
+28 silly addNameRange     '0.27.5',
+28 silly addNameRange     '0.27.6',
+28 silly addNameRange     '0.27.7',
+28 silly addNameRange     '0.28.0',
+28 silly addNameRange     '0.28.1',
+28 silly addNameRange     '0.28.2',
+28 silly addNameRange     '0.29.0',
+28 silly addNameRange     '0.30.0',
+28 silly addNameRange     '0.31.0',
+28 silly addNameRange     '0.31.1',
+28 silly addNameRange     '0.31.2',
+28 silly addNameRange     '0.32.0',
+28 silly addNameRange     '0.33.0',
+28 silly addNameRange     '0.34.0',
+28 silly addNameRange     '0.34.1',
+28 silly addNameRange     '0.35.0',
+28 silly addNameRange     '1.0.0',
+28 silly addNameRange     '1.0.1',
+28 silly addNameRange     '1.0.2',
+28 silly addNameRange     '1.1.0',
+28 silly addNameRange     '1.1.1',
+28 silly addNameRange     '1.1.2',
+28 silly addNameRange     '1.1.3',
+28 silly addNameRange     '1.1.4',
+28 silly addNameRange     '1.1.5',
+28 silly addNameRange     '1.2.0',
+28 silly addNameRange     '1.3.0',
+28 silly addNameRange     '1.3.1',
+28 silly addNameRange     '1.4.0',
+28 silly addNameRange     '1.4.1',
+28 silly addNameRange     '1.4.2',
+28 silly addNameRange     '1.5.0',
+28 silly addNameRange     '1.6.0',
+28 silly addNameRange     '1.7.0',
+28 silly addNameRange     '1.8.0',
+28 silly addNameRange     '1.8.1',
+28 silly addNameRange     '1.8.2',
+28 silly addNameRange     '1.9.0',
+28 silly addNameRange     '1.9.1',
+28 silly addNameRange     '1.9.2',
+28 silly addNameRange     '1.10.0',
+28 silly addNameRange     '1.11.0' ] ]
+29 verbose addNamed [ 'jade', '1.11.0' ]
+30 verbose addNamed [ '1.11.0', '1.11.0' ]
+31 silly lockFile 3da033ff-jade-1-11-0 jade@1.11.0
+32 verbose lock jade@1.11.0 /home/nguyenminhcan/.npm/3da033ff-jade-1-11-0.lock
+33 warn deprecated jade@1.11.0: Jade has been renamed to pug, please install the latest version of pug instead of jade
+34 silly lockFile d7f8e295-y-npmjs-org-jade-jade-1-11-0-tgz https://registry.npmjs.org/jade/-/jade-1.11.0.tgz
+35 verbose lock https://registry.npmjs.org/jade/-/jade-1.11.0.tgz /home/nguyenminhcan/.npm/d7f8e295-y-npmjs-org-jade-jade-1-11-0-tgz.lock
+36 verbose addRemoteTarball [ 'https://registry.npmjs.org/jade/-/jade-1.11.0.tgz',
+36 verbose addRemoteTarball   '9c80e538c12d3fb95c8d9bb9559fa0cc040405fd' ]
+37 info retry fetch attempt 1 at 10:41:55
+38 verbose fetch to= /tmp/npm-15575-Jc1v5jiQ/registry.npmjs.org/jade/-/jade-1.11.0.tgz
+39 http GET https://registry.npmjs.org/jade/-/jade-1.11.0.tgz
+40 http 200 https://registry.npmjs.org/jade/-/jade-1.11.0.tgz
+41 silly lockFile d7f8e295-y-npmjs-org-jade-jade-1-11-0-tgz https://registry.npmjs.org/jade/-/jade-1.11.0.tgz
+42 silly lockFile d7f8e295-y-npmjs-org-jade-jade-1-11-0-tgz https://registry.npmjs.org/jade/-/jade-1.11.0.tgz
+43 silly lockFile 3da033ff-jade-1-11-0 jade@1.11.0
+44 silly lockFile 3da033ff-jade-1-11-0 jade@1.11.0
+45 silly lockFile 51d481b2-jade jade@
+46 silly lockFile 51d481b2-jade jade@
+47 silly resolved [ { name: 'jade',
+47 silly resolved     description: 'A clean, whitespace-sensitive template language for writing HTML',
+47 silly resolved     version: '1.11.0',
+47 silly resolved     author: { name: 'TJ Holowaychuk', email: 'tj@vision-media.ca' },
+47 silly resolved     maintainers: [ [Object], [Object], [Object], [Object] ],
+47 silly resolved     license: 'MIT',
+47 silly resolved     repository: { type: 'git', url: 'git://github.com/jadejs/jade.git' },
+47 silly resolved     main: 'lib',
+47 silly resolved     bin: { jade: './bin/jade.js' },
+47 silly resolved     dependencies:
+47 silly resolved      { 'character-parser': '1.2.1',
+47 silly resolved        'clean-css': '^3.1.9',
+47 silly resolved        commander: '~2.6.0',
+47 silly resolved        constantinople: '~3.0.1',
+47 silly resolved        jstransformer: '0.0.2',
+47 silly resolved        mkdirp: '~0.5.0',
+47 silly resolved        transformers: '2.1.0',
+47 silly resolved        'uglify-js': '^2.4.19',
+47 silly resolved        'void-elements': '~2.0.1',
+47 silly resolved        with: '~4.0.0' },
+47 silly resolved     devDependencies:
+47 silly resolved      { browserify: '*',
+47 silly resolved        'browserify-middleware': '~4.1.0',
+47 silly resolved        'code-mirror': '~3.22.0',
+47 silly resolved        'coffee-script': '*',
+47 silly resolved        coveralls: '^2.11.2',
+47 silly resolved        express: '~4.10.4',
+47 silly resolved        'github-basic': '^4.1.2',
+47 silly resolved        handle: '~1.0.0',
+47 silly resolved        'highlight-codemirror': '~4.1.0',
+47 silly resolved        inconsolata: '0.0.2',
+47 silly resolved        istanbul: '*',
+47 silly resolved        'jade-code-mirror': '~1.0.5',
+47 silly resolved        'jade-highlighter': '~1.0.5',
+47 silly resolved        'jstransformer-cdata': '0.0.3',
+47 silly resolved        'jstransformer-coffee-script': '0.0.2',
+47 silly resolved        'jstransformer-less': '^1.0.0',
+47 silly resolved        'jstransformer-marked': '0.0.1',
+47 silly resolved        'jstransformer-stylus': '0.0.1',
+47 silly resolved        'jstransformer-verbatim': '0.0.2',
+47 silly resolved        less: '<2.0.0',
+47 silly resolved        'less-file': '0.0.9',
+47 silly resolved        linify: '*',
+47 silly resolved        lsr: '^1.0.0',
+47 silly resolved        marked: '~0.3.3',
+47 silly resolved        mocha: '*',
+47 silly resolved        opener: '^1.3.0',
+47 silly resolved        'pull-request': '^3.0.0',
+47 silly resolved        rimraf: '^2.2.8',
+47 silly resolved        should: '*',
+47 silly resolved        stop: '^3.0.0-rc1',
+47 silly resolved        stylus: '*',
+47 silly resolved        twbs: '0.0.6',
+47 silly resolved        'uglify-js': '*' },
+47 silly resolved     component: { scripts: [Object] },
+47 silly resolved     scripts:
+47 silly resolved      { test: 'mocha -R spec',
+47 silly resolved        precoverage: 'rimraf coverage && rimraf cov-pt*',
+47 silly resolved        coverage: 'istanbul cover --report none --dir cov-pt0 node_modules/mocha/bin/_mocha -- -R dot',
+47 silly resolved        postcoverage: 'istanbul report --include cov-pt\\*/coverage.json && rimraf cov-pt*',
+47 silly resolved        coveralls: 'npm run coverage && cat ./coverage/lcov.info | coveralls',
+47 silly resolved        prepublish: 'npm prune && linify transform bin && npm run build',
+47 silly resolved        build: 'npm run compile',
+47 silly resolved        compile: 'npm run compile-full && npm run compile-runtime',
+47 silly resolved        'compile-full': 'browserify ./lib/index.js --standalone jade -x ./node_modules/transformers > jade.js',
+47 silly resolved        'compile-runtime': 'browserify ./lib/runtime.js --standalone jade > runtime.js' },
+47 silly resolved     browser: { fs: false, './lib/filters.js': './lib/filters-client.js' },
+47 silly resolved     homepage: 'http://jade-lang.com',
+47 silly resolved     gitHead: '31966399f86b15159f2ff47dff99fbf4c92fadd5',
+47 silly resolved     bugs: { url: 'https://github.com/jadejs/jade/issues' },
+47 silly resolved     _id: 'jade@1.11.0',
+47 silly resolved     _shasum: '9c80e538c12d3fb95c8d9bb9559fa0cc040405fd',
+47 silly resolved     _from: 'jade@',
+47 silly resolved     _npmVersion: '2.11.0',
+47 silly resolved     _nodeVersion: '2.2.1',
+47 silly resolved     _npmUser: { name: 'alubbe', email: 'npm@lubbe.org' },
+47 silly resolved     dist:
+47 silly resolved      { shasum: '9c80e538c12d3fb95c8d9bb9559fa0cc040405fd',
+47 silly resolved        tarball: 'https://registry.npmjs.org/jade/-/jade-1.11.0.tgz' },
+47 silly resolved     deprecated: 'Jade has been renamed to pug, please install the latest version of pug instead of jade',
+47 silly resolved     directories: {},
+47 silly resolved     _resolved: 'https://registry.npmjs.org/jade/-/jade-1.11.0.tgz' } ]
+48 info install jade@1.11.0 into /usr/local/lib
+49 info installOne jade@1.11.0
+50 verbose lib/node_modules/jade unbuild
+51 verbose tar unpack /home/nguyenminhcan/.npm/jade/1.11.0/package.tgz
+52 silly lockFile 537c17f0--usr-local-lib-node-modules-jade tar:///usr/local/lib/node_modules/jade
+53 verbose lock tar:///usr/local/lib/node_modules/jade /home/nguyenminhcan/.npm/537c17f0--usr-local-lib-node-modules-jade.lock
+54 silly lockFile 2fdafb05-hcan-npm-jade-1-11-0-package-tgz tar:///home/nguyenminhcan/.npm/jade/1.11.0/package.tgz
+55 verbose lock tar:///home/nguyenminhcan/.npm/jade/1.11.0/package.tgz /home/nguyenminhcan/.npm/2fdafb05-hcan-npm-jade-1-11-0-package-tgz.lock
+56 silly gunzTarPerm modes [ '775', '664' ]
+57 error Error: EACCES, mkdir '/usr/local/lib/node_modules'
+57 error  { [Error: EACCES, mkdir '/usr/local/lib/node_modules']
+57 error   errno: 3,
+57 error   code: 'EACCES',
+57 error   path: '/usr/local/lib/node_modules',
+57 error   fstream_type: 'Directory',
+57 error   fstream_path: '/usr/local/lib/node_modules/jade',
+57 error   fstream_class: 'DirWriter',
+57 error   fstream_stack:
+57 error    [ '/usr/lib/nodejs/fstream/lib/writer.js:171:23',
+57 error      '/usr/lib/nodejs/mkdirp/index.js:46:53',
+57 error      'Object.oncomplete (fs.js:107:15)' ] }
+58 error Please try running this command again as root/Administrator.
+59 error System Linux 3.19.0-49-generic
+60 error command "/usr/bin/nodejs" "/usr/bin/npm" "install" "jade" "--global"
+61 error cwd /home/nguyenminhcan/workspace/webrtc/webrtc-chat-peer-to-peer
+62 error node -v v0.10.25
+63 error npm -v 1.4.21
+64 error path /usr/local/lib/node_modules
+65 error fstream_path /usr/local/lib/node_modules/jade
+66 error fstream_type Directory
+67 error fstream_class DirWriter
+68 error code EACCES
+69 error errno 3
+70 error stack Error: EACCES, mkdir '/usr/local/lib/node_modules'
+71 error fstream_stack /usr/lib/nodejs/fstream/lib/writer.js:171:23
+71 error fstream_stack /usr/lib/nodejs/mkdirp/index.js:46:53
+71 error fstream_stack Object.oncomplete (fs.js:107:15)
+72 verbose exit [ 3, true ]

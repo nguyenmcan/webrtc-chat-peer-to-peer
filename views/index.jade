@@ -1,0 +1,30 @@
+doctype html
+html
+  head
+    title
+    link(rel="stylesheet" href="/css/main.css")
+
+body
+  dialog#popupDialog
+    h3#roomLabel Enter room id:
+    input#roomId(type="text", style="width: 250px; height: 30px; padding: 5px; border: none;font-size: large")
+    br
+    button#connectBtn(style="font-size: large;margin-left:90px;margin-top: 20px;width: 100px;height: 30px;background-color:rgb(191, 191, 191); border:none; border-radius:2px", autofocus=true) Connect
+
+  script.
+    var randomRoom = Math.floor((Math.random() * 100000) + 99999);
+    var dialog = document.getElementById('popupDialog');
+    var roomInput = document.getElementById('roomId');
+    var roomLabel = document.getElementById('roomLabel');
+    
+    document.getElementById('connectBtn').onclick = function() {
+        if (roomInput.value != "") {
+          var roomId = roomInput.value;   
+          window.location.replace("/room/" + roomId);
+        } else {
+          roomLabel.style.color = "red";
+        }
+    };
+    
+    roomInput.value = randomRoom;
+    dialog.show();
