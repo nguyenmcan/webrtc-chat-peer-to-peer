@@ -5,54 +5,54 @@ var WebRTCSignaling = function (socket) {
 
 WebRTCSignaling.prototype.connect = function (room, user) {
     var o = this;
-    this.socket_io.on('offer', function (message) {
+    this.socket_io.on('rtc-close', function (user) {
+        o.rtcclose(user);
+    });
+    this.socket_io.on('rtc-offer', function (message) {
         var msg = JSON.parse(message);
-        o.onoffer(msg.sdp);
+        o.rtcoffer(msg.sdp);
     });
-    this.socket_io.on('answer', function (message) {
+    this.socket_io.on('rtc-answer', function (message) {
         var msg = JSON.parse(message);
-        o.onanswer(msg.sdp);
+        o.rtcanswer(msg.sdp);
     });
-    this.socket_io.on('candidate', function (message) {
+    this.socket_io.on('rtc-candidate', function (message) {
         var msg = JSON.parse(message);
-        o.oncandidate(msg);
+        o.rtccandidate(msg);
     });
-    this.socket_io.on('created', function (user) {
-        o.oncreated(user);
+    this.socket_io.on('joined', function (user, roomsize) {
+        o.onjoined(user, roomsize);
     });
-    this.socket_io.on('joined', function (user) {
-        o.onjoined(user);
-    });
-    this.socket_io.on('closed', function (user) {
-        o.onclosed();
+    this.socket_io.on('leaved', function (user, roomsize) {
+        o.onleaved(user, roomsize);
     });
     this.socket_io.emit('create or join', room, user);
 }
 
-WebRTCSignaling.prototype.onoffer = function (description) { }
+WebRTCSignaling.prototype.rtcclose = function (description) { }
 
-WebRTCSignaling.prototype.onanswer = function (description) { }
+WebRTCSignaling.prototype.rtcoffer = function (description) { }
 
-WebRTCSignaling.prototype.oncandidate = function (candidate) { }
+WebRTCSignaling.prototype.rtcanswer = function (description) { }
 
-WebRTCSignaling.prototype.onjoined = function (user) { }
+WebRTCSignaling.prototype.rtccandidate = function (candidate) { }
 
-WebRTCSignaling.prototype.oncreated = function (user) { }
+WebRTCSignaling.prototype.onjoined = function (user, roomsize) { }
 
-WebRTCSignaling.prototype.onclosed = function (user) { }
+WebRTCSignaling.prototype.onleaved = function (user, roomsize) { }
 
 WebRTCSignaling.prototype.closeRTC = function () {
-    this.socket_io.emit("close");
+    this.socket_io.emit("rtc-close");
 }
 
 WebRTCSignaling.prototype.sendOffer = function (description) {
     var msgString = JSON.stringify({ "sdp": description });
-    this.socket_io.emit("offer", msgString);
+    this.socket_io.emit("rtc-offer", msgString);
 }
 
 WebRTCSignaling.prototype.sendAnswer = function (description) {
     var msgString = JSON.stringify({ "sdp": description });
-    this.socket_io.emit("answer", msgString);
+    this.socket_io.emit("rtc-answer", msgString);
 }
 
 WebRTCSignaling.prototype.sendCandidate = function (candidate) {
@@ -61,5 +61,5 @@ WebRTCSignaling.prototype.sendCandidate = function (candidate) {
         sdpMid: candidate.sdpMid,
         candidate: candidate.candidate
     });
-    this.socket_io.emit("candidate", msgString);
+    this.socket_io.emit("rtc-candidate", msgString);
 }

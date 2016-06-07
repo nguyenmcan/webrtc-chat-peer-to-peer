@@ -52,8 +52,14 @@ WebRTCClient.prototype.addLocalStream = function (stream) {
     this.rtcConnection.addStream(stream);
 }
 
+WebRTCClient.prototype.removeLocalStream = function (stream) {
+    this.rtcConnection.removeStream(stream);
+}
+
 WebRTCClient.prototype.closeRTCConnection = function () {
-    this.rtcConnection.close();
+    if (this.rtcConnection) {
+        this.rtcConnection.close();
+    }
 }
 
 WebRTCClient.prototype.addIceCandidate = function (cadidate) {

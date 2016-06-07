@@ -18,7 +18,7 @@ router.set('views', './views');
 router.set('view engine', 'jade');
 router.use(express.static(__dirname + '/public'));
 
-var appServer = https.createServer(options, router).listen(8080);
+var appServer = http.createServer(router).listen(8080);
 
 router.get("/", function (req, res) {
   res.render("index", {});
@@ -41,20 +41,20 @@ function log(msg) {
 var io = socketIO.listen(appServer);
 
 io.sockets.on('connection', function (socket) {
-  socket.on('candidate', function (message) {
-    socket.broadcast.to(socket.room).emit('candidate', message);
+  socket.on('rtc-candidate', function (message) {
+    socket.broadcast.to(socket.room).emit('rtc-candidate', message);
   });
 
-  socket.on('answer', function (message) {
-    socket.broadcast.to(socket.room).emit('answer', message);
+  socket.on('rtc-answer', function (message) {
+    socket.broadcast.to(socket.room).emit('rtc-answer', message);
   });
 
-  socket.on('offer', function (message) {
-    socket.broadcast.to(socket.room).emit('offer', message);
+  socket.on('rtc-offer', function (message) {
+    socket.broadcast.to(socket.room).emit('rtc-offer', message);
   });
 
-  socket.on('close', function () {
-    socket.broadcast.to(socket.room).emit('closed', socket.user);
+  socket.on('rtc-close', function () {
+    socket.broadcast.to(socket.room).emit('rtc-close', socket.user);
   });
 
   socket.on('message', function (message) {
@@ -69,7 +69,11 @@ io.sockets.on('connection', function (socket) {
 
   socket.on('disconnect', function () {
     if (socket.user) {
-      socket.broadcast.to(socket.room).emit('closed', socket.user);
+      var roomSize = 0;
+      if (io.sockets.adapter.rooms[socket.room]) {
+        roomSize = Object.keys(io.sockets.adapter.rooms[socket.room]).length;
+      }
+      io.sockets.to(socket.room).emit('leaved', socket.user, roomSize);
       log("Close connection! " + socket.user);
     }
   });
@@ -84,14 +88,14 @@ io.sockets.on('connection', function (socket) {
       socket.room = room;
       socket.user = user;
       roomSize++;
-      socket.emit("created", user, socket.id);
+      io.sockets.to(room).emit("joined", user, roomSize);
       log('User ' + user + ' created room ' + room);
     } else if (roomSize === 1) {
       socket.join(room);
       socket.room = room;
       socket.user = user;
       roomSize++;
-      socket.emit("joined", user, socket.id);
+      io.sockets.to(room).emit("joined", user, roomSize);
       log('User ' + user + ' joined room ' + room);
     } else {
       socket.emit('error', "Full room. Please select other room!");

@@ -6,13 +6,14 @@ html
   
   body
     div#buttonBar(style="z-index: 999")
-      dialog#confirmDlg
-        button#homeBtn(style="margin-left:10px;background-color:#3B78E7;padding:15px;border:none;border-radius:50%;color:white") Back
-        button#joinBtn(style="margin-left:10px;background-color:#3B78E7;padding:15px;border:none;border-radius:50%;color:white") Join
-      dialog#controlDlg 
-        button#muteAudioBtn(style="background-color:#3B78E7;padding:10px;border:none;border-radius:10px;color:white") Mute Audio
-        button#muteVideoBtn(style="background-color:#3B78E7;padding:10px;border:none;border-radius:10px;color:white") Mute Video
-        button#hangupBtn(style="background-color:#3B78E7;padding:10px;border:none;border-radius:10px;color:white") Hangup      
+      div#confirmButtons(style="z-index: 999; display: none")
+        button#homeBtn(style="") NEW ROOM
+        button#joinBtn(style="background-color: #4CAF50") START CALL
+        
+      div#controlButtons(style="z-index: 999; display: none")
+        button#muteAudioBtn(style="") Mute Audio
+        button#muteVideoBtn(style="") Mute Video
+        button#hangupBtn(style="background-color:red") Hangup      
   
     div#chatScreen(style="display: block")
       video#localVideo(autoplay=true)
@@ -43,8 +44,8 @@ html
       var hangupBtn = document.querySelector('button#hangupBtn');
       var homeBtn = document.querySelector('button#homeBtn');
       var joinBtn = document.querySelector('button#joinBtn');
-      var controlBtn = document.querySelector('div#controlDlg');
-      var confirmDlg = document.querySelector("dialog#confirmDlg");
+      var controlButtons = document.querySelector('div#controlButtons');
+      var confirmButtons = document.querySelector("div#confirmButtons");
       var notifyMsg = document.querySelector("p#notifyMsg");
     
       var localStream;
@@ -53,6 +54,14 @@ html
       var userId = Math.floor((Math.random() * 100000) + 99999);
       var mediaConstraints = { "audio": true, "video": { "optional": [{ "minWidth": "1280" }, { "minHeight": "720" }], "mandatory": {} } }
     
+      function showElement(elem) {
+        elem.style.display = "block";
+      }
+      
+      function closeElement(elem) {
+        elem.style.display = "none";
+      }
+      
       muteVideoBtn.onclick = function (event) {
         onMuteVideo().then(function (enabled) {
           if (enabled) {
@@ -74,29 +83,42 @@ html
       }
 
       hangupBtn.onclick = function (event) {
-        signalService.closeRTC();
+        signaling.closeRTC();
         stopVideoCall();
-        confirmDlg.show();
-        controlBtn.close();
+        showElement(confirmButtons);
+        closeElement(controlButtons);
+        trace("> hangupBtn");
       }
 
       homeBtn.onclick = function (event) {
-
+         window.location = "/";
       }
 
       joinBtn.onclick = function (event) {
-        createRTCConnection();
         startVideoCall();
       }          
       
       function onRTCClosed(user) {
         stopVideoCall();
+        trace("> onRTCClosed");
       }      
       
-      function onJoinRoom(user, initator) {
-        if(!initator) {
-          startVideoCall();
-        }
+      function joinRoom(user, roomsize) {
+        if(roomsize == 2) {
+          joinBtn.style.display = "inline-block";
+        } else {
+          joinBtn.style.display = "none";
+        }        
+        trace("Room Size: " + roomsize);
+      }
+      
+      function leaveRoom(user, roomsize) {
+        if(roomsize == 2) {
+          joinBtn.style.display = "inline-block";
+        } else {
+          joinBtn.style.display = "none";
+        }        
+        trace("Room Size: " + roomsize);
       }
 
       function addRemoteStream(stream) {
@@ -106,8 +128,10 @@ html
         localVideo.pause();
         remoteVideo.classList.add("active");
         miniVideo.classList.add("active");
-        confirmDlg.close();
-        controlBtn.show();
+        
+        showElement(controlButtons);
+        closeElement(confirmButtons);
+        
         trace("Add remoteStream " + event.stream.id);
       }   
       
@@ -127,27 +151,30 @@ html
         remoteVideo.pause();
         miniVideo.classList.remove("active");
         miniVideo.pause();
-        rtcConnection.close();
-        incallButtonBar.classList.remove("active");
+        webRTCClient.closeRTCConnection();   
+        showElement(confirmButtons);
+        closeElement(controlButtons);
         trace("Stop video call!");
       }         
 
       function startMediaStream() {
         navigator.mediaDevices.getUserMedia(mediaConstraints).then(function (stream) {
           localStream = stream;
+          
           //- if(stream.getVideoTracks().length == 0 || stream.getAudioTracks().length == 0) {
           //-   alert("Can not access media devices!"); 
           //-   window.location = "/";
           //-   return;
           //- }
+          
           localVideo.src = window.URL.createObjectURL(new MediaStream(stream.getVideoTracks()));
           signaling.connect(roomId, userId);
+          
+          showElement(confirmButtons);
           trace("Start media stream!");            
         });
       }
       
       startMediaStream();
-
- 
       
             

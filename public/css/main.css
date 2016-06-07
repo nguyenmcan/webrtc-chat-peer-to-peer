@@ -8,15 +8,32 @@ video {
   max-height: 100%;
 }
 
-dialog {
-  /*background: #e8e8e8;*/
+#buttonBar {
+  background: transparent;
   border: none;
-  font-family: sans-serif;
-  padding: 10px 20px;
-  margin-top: 100px;
+  position: absolute;
+  text-align: center;
+  width: 100%;
+  bottom: 10%;
+  left: 50%;
+  margin-right: -50%;
+  transform: translate(-50%, -50%)   
+}
+
+#buttonBar button {
+  margin: 10px;
+  background-color:#3B78E7;
+  padding: 20px;
+  color:white;
+  border-radius: 5px;
+}
+ 
+#buttonBar button.inactive {
+  background-color:#9E9E9E !important;
+  color:white !important;
 }
     
-#local-video {
+#localVideo {
   height: 100%;
   max-height: 100%;
   max-width: 100%;
@@ -32,7 +49,7 @@ dialog {
   width: 100%;
 }
 
-#mini-video {
+#miniVideo {
   border: 1px solid gray;
   bottom: 20px;
   right: 20px;
@@ -44,12 +61,12 @@ dialog {
   transition: opacity 1s;
 }
 
-#mini-video.active {
+#miniVideo.active {
   opacity: 1;
   z-index: 2;
 }
 
-#remote-video {
+#remoteVideo {
   display: block;
   height: 100%;
   max-height: 100%;
@@ -67,20 +84,7 @@ dialog {
   width: 100%;
 }
 
-#remote-video.active {
+#remoteVideo.active {
   opacity: 1;
   z-index: 1;
-}
-
-#in-call-buttons button.inactive {
-  background-color: #9E9E9E !important;
-  color: #000000 !important;
-}
-
-#in-call-buttons.active {
-  display: block !important;
-}
-
-#hangup-buttons.active {
-  display: block !important;
 }

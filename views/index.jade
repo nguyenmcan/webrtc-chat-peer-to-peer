@@ -3,17 +3,28 @@ html
   head
     title
     link(rel="stylesheet" href="/css/main.css")
-
+    style.
+      #inputForm {
+        background: #3B78E7;
+        color: white;
+        border-radius: 1em;
+        padding: 20px;
+        position: absolute;
+        top: 40%;
+        left: 50%;
+        margin-right: -50%;
+        transform: translate(-50%, -50%) 
+      }
 body
-  dialog#popupDialog
+  div#inputForm(style="")
     h3#roomLabel Enter room id:
-    input#roomId(type="text", style="width: 250px; height: 30px; padding: 5px; border: none;font-size: large")
+    input#roomId(type="text", style="width:500px;height:30px;padding:10px;border:none;font-size:large")
     br
-    button#connectBtn(style="font-size: large;margin-left:90px;margin-top: 20px;width: 100px;height: 30px;background-color:rgb(191, 191, 191); border:none; border-radius:2px", autofocus=true) Connect
+    br
+    button#connectBtn(style="font-size:large;margin-left:200px;width:150px;height:50px;background-color:rgb(191, 191, 191);border-radius:5px", autofocus=true) Join Room
 
   script.
     var randomRoom = Math.floor((Math.random() * 100000) + 99999);
-    var dialog = document.getElementById('popupDialog');
     var roomInput = document.getElementById('roomId');
     var roomLabel = document.getElementById('roomLabel');
     
@@ -27,4 +38,3 @@ body
     };
     
     roomInput.value = randomRoom;
-    dialog.show();

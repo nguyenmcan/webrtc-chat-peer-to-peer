@@ -4,31 +4,32 @@ var socket = io.connect("localhost:8080");
 var signaling = new WebRTCSignaling(socket);
 var webRTCClient = new WebRTCClient();
 
-signaling.oncandidate = function (candidate) {
+signaling.rtccandidate = function (candidate) {
   webRTCClient.addIceCandidate(new RTCIceCandidate(candidate));
 }
 
-signaling.onclosed = function (user) {
+signaling.rtcclose = function (user) {
   onRTCClosed(user);
 }
 
-signaling.onoffer = function (sdp) {
+signaling.rtcoffer = function (offerSDP) {
   webRTCClient.createRTCConnection(servers);
-  webRTCClient.createAnswer(sdp).then(function (sdp) {
-    signaling.sendAnswer(sdp);
+  webRTCClient.addLocalStream(window.localStream);
+  webRTCClient.createAnswer(offerSDP).then(function (answerSDP) {
+    signaling.sendAnswer(answerSDP);
   });
 }
 
-signaling.onanswer = function (sdp) {
+signaling.rtcanswer = function (sdp) {
   webRTCClient.setRemoteDescription(new RTCSessionDescription(sdp));
 }
 
-signaling.oncreated = function (user) {
-  onJoinRoom(user, true);
+signaling.onjoined = function (user, roomsize) {
+  joinRoom(user, roomsize);
 }
 
-signaling.onjoined = function (user) {
-  onJoinRoom(user, false);
+signaling.onleaved = function (user, roomsize) {
+  leaveRoom(user, roomsize);
 }
 
 webRTCClient.onIceCandidate = function (event) {
