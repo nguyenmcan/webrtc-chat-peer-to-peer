@@ -5,10 +5,13 @@ html
     link(rel="stylesheet", href="/css/main.css")
   
   body
+    input#selectFile(type="file", style="display: none")
+    
     div#buttonBar(style="z-index: 999")
       div#confirmButtons(style="z-index: 999; display: none")
         button#homeBtn(style="") NEW ROOM
-        button#joinBtn(style="background-color: #4CAF50") START CALL
+        button#sendFileBtn(style="background-color:#009BAF") SENT FILE
+        button#startCallBtn(style="background-color: #4CAF50") START CALL
         
       div#controlButtons(style="z-index: 999; display: none")
         button#muteAudioBtn(style="") Mute Audio
@@ -34,20 +37,7 @@ html
     script(src="/js/webrtc.js")
     script(src="/js/main.js")
 
-    script.    
-      var videoDisplay = document.querySelector('div#videoDisplay');
-      var localVideo = document.querySelector('video#localVideo');
-      var remoteVideo = document.querySelector('video#remoteVideo');
-      var miniVideo = document.querySelector('video#miniVideo');
-      var muteVideoBtn = document.querySelector('button#muteVideoBtn');
-      var muteAudioBtn = document.querySelector('button#muteAudioBtn');
-      var hangupBtn = document.querySelector('button#hangupBtn');
-      var homeBtn = document.querySelector('button#homeBtn');
-      var joinBtn = document.querySelector('button#joinBtn');
-      var controlButtons = document.querySelector('div#controlButtons');
-      var confirmButtons = document.querySelector("div#confirmButtons");
-      var notifyMsg = document.querySelector("p#notifyMsg");
-    
+    script.        
       var localStream;
       var remoteStream;      
       var roomId = #{roomId};
@@ -60,7 +50,7 @@ html
       
       function closeElement(elem) {
         elem.style.display = "none";
-      }
+      }      
       
       muteVideoBtn.onclick = function (event) {
         onMuteVideo().then(function (enabled) {
@@ -89,12 +79,33 @@ html
         closeElement(controlButtons);
         trace("> hangupBtn");
       }
+      
+      selectFile.addEventListener('change', function (evt){
+        var files = evt.target.files; // FileList object
+        if(files.length == 1) {
+          var file = files[0];
+          sendFile(file);
+        }
+      }, false);      
+      
+      function sendFile(file) {
+        
+      }
+      
+      sendFileBtn.onclick = function(event) {
+        // Check for the various File API support.
+        if (window.File && window.FileReader && window.FileList && window.Blob) {
+          selectFile.click();
+        } else {
+          alert('The File APIs are not fully supported in this browser.');
+        }
+      }
 
       homeBtn.onclick = function (event) {
          window.location = "/";
       }
 
-      joinBtn.onclick = function (event) {
+      startCallBtn.onclick = function (event) {
         startVideoCall();
       }          
       
@@ -105,18 +116,18 @@ html
       
       function joinRoom(user, roomsize) {
         if(roomsize == 2) {
-          joinBtn.style.display = "inline-block";
+          startCallBtn.style.display = "inline-block";
         } else {
-          joinBtn.style.display = "none";
+          startCallBtn.style.display = "none";
         }        
         trace("Room Size: " + roomsize);
       }
       
       function leaveRoom(user, roomsize) {
         if(roomsize == 2) {
-          joinBtn.style.display = "inline-block";
+          startCallBtn.style.display = "inline-block";
         } else {
-          joinBtn.style.display = "none";
+          startCallBtn.style.display = "none";
         }        
         trace("Room Size: " + roomsize);
       }
