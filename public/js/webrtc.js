@@ -1,5 +1,7 @@
 var WebRTCClient = function () {
     this.rtcConnection;
+    this.sendDataChannel;
+    this.receiveDataChannel;
 }
 
 WebRTCClient.prototype.createRTCConnection = function (servers, constraints) {
@@ -19,6 +21,26 @@ WebRTCClient.prototype.createRTCConnection = function (servers, constraints) {
         this.rtcConnection.onconnectionstatechange = function (event) {
             trace("connectionStateChange: " + this.rtcConnection.connectionState);
         }.bind(this);
+
+        this.sendDataChannel = this.rtcConnection.createDataChannel("sendDataChannel", {});
+        this.sendDataChannel.binaryType = 'arraybuffer';
+        this.sendDataChannel.onopen = onDataChannelChangeState.bind(this.sendDataChannel);
+        this.sendDataChannel.onclose = onDataChannelChangeState.bind(this.sendDataChannel);
+
+        this.rtcConnection.ondatachannel = function (event) {
+            this.receiveDataChannel = event.channel;
+            this.receiveDataChannel.binaryType = 'arraybuffer';
+            this.receiveDataChannel.onmessage = this.onReceiveMessageCallback;
+            this.receiveDataChannel.onopen = onDataChannelChangeState.bind(this.receiveDataChannel);
+            this.receiveDataChannel.onclose = onDataChannelChangeState.bind(this.receiveDataChannel);
+        }.bind(this);
+
+        function onDataChannelChangeState(event) {
+            var readyState = this.readyState;
+            trace('Receive channel state is: ' + readyState);
+        }
+
+        trace('Created send data channel');
     } catch (e) {
         trace("Failed to create PeerConnection, exception: " + e.message);
         return;
@@ -42,7 +64,6 @@ WebRTCClient.prototype.createAnswer = function (offerSDP) {
             resolve(answerSDP);
         }.bind(this));
     }.bind(this));
-
 }
 
 WebRTCClient.prototype.addRemoteStream = function (event) {
@@ -71,4 +92,11 @@ WebRTCClient.prototype.onIceCandidate = function (cadidate) {
 
 WebRTCClient.prototype.setRemoteDescription = function (sdp) {
     this.rtcConnection.setRemoteDescription(sdp);
+}
+
+WebRTCClient.prototype.sendData = function (data) {
+    this.sendDataChannel.send(data);
+}
+
+WebRTCClient.prototype.onReceiveMessageCallback = function (event) {
 }

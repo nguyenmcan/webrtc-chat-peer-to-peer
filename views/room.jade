@@ -6,16 +6,17 @@ html
   
   body
     input#selectFile(type="file", style="display: none")
+    a#downloadFile(style="display:none")
     
     div#buttonBar(style="z-index: 999")
       div#confirmButtons(style="z-index: 999; display: none")
         button#homeBtn(style="") NEW ROOM
-        button#sendFileBtn(style="background-color:#009BAF") SENT FILE
         button#startCallBtn(style="background-color: #4CAF50") START CALL
         
       div#controlButtons(style="z-index: 999; display: none")
         button#muteAudioBtn(style="") Mute Audio
         button#muteVideoBtn(style="") Mute Video
+        button#sendFileBtn(style="background-color:#009BAF") SENT FILE
         button#hangupBtn(style="background-color:red") Hangup      
   
     div#chatScreen(style="display: block")
@@ -86,10 +87,42 @@ html
           var file = files[0];
           sendFile(file);
         }
+        trace("Files: " + files.length);
       }, false);      
       
       function sendFile(file) {
-        
+        var fileReader = new FileReader();
+        fileReader.onload = function(event) {
+          webRTCClient.sendData("start");
+          webRTCClient.sendData(event.target.result);
+          webRTCClient.sendData("end:" + file.name);
+          selectFile.value = "";
+          trace("Send file done! " + event.target.result.byteLength);
+        }
+        fileReader.readAsArrayBuffer(file);
+      }
+      
+      var receiveBuffer = [];  
+      
+      webRTCClient.onReceiveMessageCallback = function (event) {
+        trace("received data: " + (typeof event.data));
+        if (typeof event.data === "string") {
+          trace("data: " + event.data);
+          if(event.data == "start") {
+            receiveBuffer = [];
+          } else if (event.data.startsWith("end:")) {
+            var fileName = event.data.slice(4);
+            var received = new window.Blob(receiveBuffer);
+            var url = window.URL.createObjectURL(received);
+            downloadFile.href = url;
+            downloadFile.download = fileName;
+            downloadFile.click();
+            window.URL.revokeObjectURL(url);
+            trace("Receive file : " + event.data.byteLength + ":" + received.size);
+          }
+       } else {
+          receiveBuffer.push(event.data);
+        }
       }
       
       sendFileBtn.onclick = function(event) {
