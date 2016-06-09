@@ -8,6 +8,12 @@ video {
   max-height: 100%;
 }
 
+#downloadFile {
+  left: 50%;
+  margin-right: -50%;
+  transform: translate(-50%, -50%)
+}
+
 #buttonBar {
   background: transparent;
   border: none;

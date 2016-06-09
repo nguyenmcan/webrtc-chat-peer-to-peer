@@ -6,17 +6,17 @@ html
   
   body
     input#selectFile(type="file", style="display: none")
-    a#downloadFile(style="display:none")
+    a#downloadFile(style="display:none;z-index:999;padding:30px 10px;top:40px;position:absolute;background-color:white")
     
     div#buttonBar(style="z-index: 999")
       div#confirmButtons(style="z-index: 999; display: none")
         button#homeBtn(style="") NEW ROOM
+        button#sendFileBtn(style="background-color:#009BAF") SENT FILE
         button#startCallBtn(style="background-color: #4CAF50") START CALL
         
       div#controlButtons(style="z-index: 999; display: none")
         button#muteAudioBtn(style="") Mute Audio
         button#muteVideoBtn(style="") Mute Video
-        button#sendFileBtn(style="background-color:#009BAF") SENT FILE
         button#hangupBtn(style="background-color:red") Hangup      
   
     div#chatScreen(style="display: block")
@@ -31,6 +31,7 @@ html
       
     p#notifyMsg(style="z-index: 999; padding: 5px;position: absolute; bottom: 0px; left: 10px; color: white; font-weight: bold; background-color: black")      
                 
+    script(src="/js/lib/jquery.min.js")
     script(src="/js/lib/adapter.js")
     script(src="/socket.io/socket.io.js")
     script(src="/js/room.js")
@@ -51,6 +52,10 @@ html
       
       function closeElement(elem) {
         elem.style.display = "none";
+      }      
+      
+      downloadFile.onclick = function () {
+        $(downloadFile).slideUp("slow");  
       }      
       
       muteVideoBtn.onclick = function (event) {
@@ -90,38 +95,57 @@ html
         trace("Files: " + files.length);
       }, false);      
       
+      var sendFileSize = 0;
+      
       function sendFile(file) {
-        var fileReader = new FileReader();
-        fileReader.onload = function(event) {
-          webRTCClient.sendData("start");
-          webRTCClient.sendData(event.target.result);
-          webRTCClient.sendData("end:" + file.name);
-          selectFile.value = "";
-          trace("Send file done! " + event.target.result.byteLength);
-        }
-        fileReader.readAsArrayBuffer(file);
+        webRTCClient.sendData("start");
+        sendFileSize = 0;
+        trace("Send file size! " + file.size);
+        readChunkFile(file, 0, 15 * 1024);
       }
       
-      var receiveBuffer = [];  
+      function readChunkFile(file, start, limit) {
+        var fileReader = new FileReader();
+        fileReader.onload = function(event) {
+          sendFileSize += event.target.result.byteLength;
+          webRTCClient.sendData(event.target.result);
+          if(event.target.result.byteLength == limit) {
+            readChunkFile(file, start + limit + 1, limit);
+          } else {
+            webRTCClient.sendData("end:" + file.name);
+            selectFile.value = "";
+            trace("> " + sendFileSize);
+            trace("Send file done! size: " + file.size);
+          }
+        }
+        var blob = file.slice(start, start + limit);
+        fileReader.readAsArrayBuffer(blob);
+      }
+      
+      var receiveBuffer = [];
+      var receiveBufferSize = 0;
       
       webRTCClient.onReceiveMessageCallback = function (event) {
-        trace("received data: " + (typeof event.data));
+        //trace("received data: " + (typeof event.data));
         if (typeof event.data === "string") {
           trace("data: " + event.data);
           if(event.data == "start") {
             receiveBuffer = [];
+            receiveBufferSize = 0;
           } else if (event.data.startsWith("end:")) {
             var fileName = event.data.slice(4);
             var received = new window.Blob(receiveBuffer);
             var url = window.URL.createObjectURL(received);
             downloadFile.href = url;
             downloadFile.download = fileName;
-            downloadFile.click();
-            window.URL.revokeObjectURL(url);
-            trace("Receive file : " + event.data.byteLength + ":" + received.size);
+            downloadFile.textContent = "Download file " + fileName;
+            $(downloadFile).slideDown("slow");
+            trace("Receive file : " + fileName + " > total: " + receiveBufferSize);
           }
        } else {
           receiveBuffer.push(event.data);
+          receiveBufferSize += event.data.byteLength;
+          //trace("Receive data : " + receiveBufferSize);
         }
       }
       
@@ -213,6 +237,10 @@ html
           
           localVideo.src = window.URL.createObjectURL(new MediaStream(stream.getVideoTracks()));
           signaling.connect(roomId, userId);
+          webRTCClient.createRTCConnection(servers);
+          webRTCClient.createOffer().then(function (sdp) {
+            signaling.sendOffer(sdp);
+          });
           
           showElement(confirmButtons);
           trace("Start media stream!");            
