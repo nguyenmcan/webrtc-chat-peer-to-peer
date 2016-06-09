@@ -1,6 +1,6 @@
 
-var servers = { "iceServers": [{ "urls": ["stun:192.168.38.162:3478"] }], "certificates": [] };
-var socket = io.connect("");
+var servers = { "iceServers": [{ "urls": ["stun:192.168.38.162:3478", "turn:192.168.38.162:3478"] }], "certificates": [] };
+var socket = io.connect("localhost:8080");
 var signaling = new WebRTCSignaling(socket);
 var webRTCClient = new WebRTCClient();
 
