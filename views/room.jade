@@ -101,7 +101,7 @@ html
         webRTCClient.sendData("start");
         sendFileSize = 0;
         trace("Send file size! " + file.size);
-        readChunkFile(file, 0, 15 * 1024);
+        readChunkFile(file, 0, 16 * 1024);
       }
       
       function readChunkFile(file, start, limit) {
@@ -109,8 +109,9 @@ html
         fileReader.onload = function(event) {
           sendFileSize += event.target.result.byteLength;
           webRTCClient.sendData(event.target.result);
+          //trace("Read chunks: " + event.target.result.byteLength + " / " + file.size);
           if(event.target.result.byteLength == limit) {
-            readChunkFile(file, start + limit + 1, limit);
+            readChunkFile(file, start + limit, limit);
           } else {
             webRTCClient.sendData("end:" + file.name);
             selectFile.value = "";
@@ -134,19 +135,23 @@ html
             receiveBufferSize = 0;
           } else if (event.data.startsWith("end:")) {
             var fileName = event.data.slice(4);
-            var received = new window.Blob(receiveBuffer);
-            var url = window.URL.createObjectURL(received);
-            downloadFile.href = url;
-            downloadFile.download = fileName;
-            downloadFile.textContent = "Download file " + fileName;
-            $(downloadFile).slideDown("slow");
+            createFile2Download(fileName);
             trace("Receive file : " + fileName + " > total: " + receiveBufferSize);
           }
        } else {
           receiveBuffer.push(event.data);
           receiveBufferSize += event.data.byteLength;
-          //trace("Receive data : " + receiveBufferSize);
+          //trace("Receive data : " + event.data.byteLength + " / " + receiveBufferSize);
         }
+      }
+      
+      function createFile2Download(fileName) {
+        var received = new window.Blob(receiveBuffer);
+        var url = window.URL.createObjectURL(received);
+        downloadFile.href = url;
+        downloadFile.download = fileName;
+        downloadFile.textContent = "Download file " + fileName;
+        $(downloadFile).slideDown("slow");
       }
       
       sendFileBtn.onclick = function(event) {

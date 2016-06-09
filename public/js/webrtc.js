@@ -22,7 +22,7 @@ WebRTCClient.prototype.createRTCConnection = function (servers, constraints) {
             trace("connectionStateChange: " + this.rtcConnection.connectionState);
         }.bind(this);
 
-        this.sendDataChannel = this.rtcConnection.createDataChannel("sendDataChannel", {});
+        this.sendDataChannel = this.rtcConnection.createDataChannel("sendDataChannel", {reliable: true});
         this.sendDataChannel.binaryType = 'arraybuffer';
         this.sendDataChannel.onopen = onDataChannelChangeState.bind(this.sendDataChannel);
         this.sendDataChannel.onclose = onDataChannelChangeState.bind(this.sendDataChannel);
