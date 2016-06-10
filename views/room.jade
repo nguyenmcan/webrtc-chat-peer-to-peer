@@ -6,7 +6,7 @@ html
   
   body
     input#selectFile(type="file", style="display: none")
-    a#downloadFile(style="display:none;z-index:999;padding:30px 10px;top:40px;position:absolute;background-color:white")
+    a#downloadFile(style="display:none;z-index:999;padding:20px 10px;top:40px;position:absolute;background-color:white")
     
     div#buttonBar(style="z-index: 999")
       div#confirmButtons(style="z-index: 999; display: none")
@@ -29,7 +29,7 @@ html
     //-   button#muteVideoBtn(style="background-color:#3B78E7;padding:10px;border:none;border-radius:10px;color:white") Mute Video
     //-   button#hangupBtn(style="background-color:#3B78E7;padding:10px;border:none;border-radius:10px;color:white") Hangup
       
-    p#notifyMsg(style="z-index: 999; padding: 5px;position: absolute; bottom: 0px; left: 10px; color: white; font-weight: bold; background-color: black")      
+    p#notifyMsg(style="z-index: 999; padding:20px;position: absolute; bottom: 0px; left: 10px; color: blue; background-color: #DCDCDC")      
                 
     script(src="/js/lib/jquery.min.js")
     script(src="/js/lib/adapter.js")
@@ -179,8 +179,10 @@ html
       function joinRoom(user, roomsize) {
         if(roomsize == 2) {
           startCallBtn.style.display = "inline-block";
+          sendFileBtn.style.display = "inline-block";
         } else {
           startCallBtn.style.display = "none";
+          sendFileBtn.style.display = "none";
         }        
         trace("Room Size: " + roomsize);
       }
@@ -188,8 +190,12 @@ html
       function leaveRoom(user, roomsize) {
         if(roomsize == 2) {
           startCallBtn.style.display = "inline-block";
+          sendFileBtn.style.display = "inline-block";
         } else {
           startCallBtn.style.display = "none";
+          sendFileBtn.style.display = "none";
+          stopVideoCall();
+          trace("> onRTCClosed");
         }        
         trace("Room Size: " + roomsize);
       }
@@ -253,5 +259,6 @@ html
       }
       
       startMediaStream();
+      notifyMsg.textContent = "Share URL: " + window.location;
       
             
