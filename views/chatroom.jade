@@ -1,0 +1,57 @@
+doctype html
+html
+  head
+    title Realtime Communication Demo
+    link(rel="stylesheet", href="/css/main.css")
+    script(src="/js/lib/jquery.min.js")
+    script(src="/js/lib/adapter.js")
+    script(src="/socket.io/socket.io.js")  
+    
+  body
+    input#selectFile(type="file", style="display: none")
+    a#downloadFile(style="display:none;z-index:999;padding:20px 10px;top:40px;position:absolute;background-color:white")
+    
+    div#buttonBar(style="z-index: 999")
+      div#confirmButtons(style="z-index: 999; display: none")
+        button#homeBtn(style="") NEW ROOM
+        button#sendFileBtn(style="background-color:#009BAF") SENT FILE
+        button#startCallBtn(style="background-color: #4CAF50") START CALL
+        
+      div#controlButtons(style="z-index: 999; display: none")
+        button#muteAudioBtn(style="") Mute Audio
+        button#muteVideoBtn(style="") Mute Video
+        button#hangupBtn(style="background-color:red") Hangup      
+  
+    div#chatScreen(style="display: block")
+      video#localVideo(autoplay=true)
+      video#remoteVideo(autoplay=true)
+      video#miniVideo(autoplay=true)
+      
+    p#notifyMsg(style="z-index: 999; padding:20px;position: absolute; bottom: 0px; left: 10px; color: blue; background-color: #DCDCDC")      
+                
+    
+    script(src="/js/chatroom.js")
+    script(src="/js/signaling.js")
+    script(src="/js/webrtc.js")
+    script(src="/js/main.js")
+
+    script.              
+      var roomId = #{roomId};
+      var userId = Math.floor((Math.random() * 100000) + 99999);
+      var servers = { "iceServers": [{ "urls": ["stun:192.168.38.162:3478", "turn:192.168.38.162:3478"] }], "certificates": [] };
+      var webSocket = io.connect();
+      var webRTCClient = new WebRTCClient();
+      var signalingServer = new WebRTCSignaling(webSocket, webRTCClient);      
+      
+      webRTCClient.onIceCandidate = function (event) {
+        if (event.candidate) {
+          signalingServer.sendCandidate(event.candidate);
+          trace("onIceCandidate: " + event.candidate.candidate);
+        } else {
+          trace("End of candidates." + event);
+        }
+      }
+      
+      signalingServer.connect(roomId, userId, webRTCClient);      
+      notifyMsg.textContent = "Share URL: " + window.location;
+            
