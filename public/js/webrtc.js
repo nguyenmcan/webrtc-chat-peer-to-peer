@@ -100,3 +100,24 @@ WebRTCClient.prototype.sendData = function (data) {
 
 WebRTCClient.prototype.onReceiveMessageCallback = function (event) {
 }
+
+
+
+
+
+
+
+/////////////////////////////
+
+webRTCClient.onIceCandidate = function (event) {
+  if (event.candidate) {
+    signaling.sendCandidate(event.candidate);
+    trace("onIceCandidate: " + event.candidate.candidate);
+  } else {
+    trace("End of candidates." + event);
+  }
+}
+
+webRTCClient.addRemoteStream = function (event) {
+  addRemoteStream(event.stream);
+}

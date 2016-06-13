@@ -1,41 +1,71 @@
+
 var ChatRoom = function (socket) {
     this.socket_io = socket;
 }
 
-ChatRoom.prototype.createOrJoin = function (room, user) {
-    if (this.socket_io) {
-        this.room = room;
-        this.user = user;
-        this.socket_io.on('message', this.onmessage);
-        this.socket_io.on('error', this.onerror);
-        this.socket_io.on('created', this.oncreated);
-        this.socket_io.on('joined', this.onjoined);
-        this.socket_io.on('leaved', this.onleaved);
-        this.socket_io.emit('create or join', room, user);
-    }
+ChatRoom.prototype.connect = function (room, user) {
+    var o = this;
+    this.socket_io.emit('create-or-join', room, user);
+
+    this.socket_io.on('joined', o.onjoined);
+
+    this.socket_io.on('leaved', o.onleaved);
+
+    this.socket_io.on('message', o.onmessage);
+
+    this.socket_io.on('rtc-close', function (user) {
+        o.rtcclose(user);
+    });
+
+    this.socket_io.on('rtc-offer', function (message) {
+        var msg = JSON.parse(message);
+        o.rtcoffer(msg.sdp);
+    });
+
+    this.socket_io.on('rtc-answer', function (message) {
+        var msg = JSON.parse(message);
+        o.rtcanswer(msg.sdp);
+    });
+
+    this.socket_io.on('rtc-candidate', function (message) {
+        var msg = JSON.parse(message);
+        o.rtccandidate(msg);
+    });
 }
+
+ChatRoom.prototype.onjoined = function (user, roomsize) { }
+
+ChatRoom.prototype.onleaved = function (user, roomsize) { }
 
 ChatRoom.prototype.onmessage = function (user, message) { }
 
-ChatRoom.prototype.oncreated = function (user, socketId) { }
+ChatRoom.prototype.rtcclose = function (description) { }
 
-ChatRoom.prototype.onjoined = function (user, socketId) { }
+ChatRoom.prototype.rtcoffer = function (description) { }
 
-ChatRoom.prototype.onerror = function (error) { }
+ChatRoom.prototype.rtcanswer = function (description) { }
 
-ChatRoom.prototype.onleaved = function (user) { }
+ChatRoom.prototype.rtccandidate = function (candidate) { }
 
-ChatRoom.prototype.send = function (message) {
-    if (this.socket_io) {
-        this.socket_io.emit("message", message);
-    }
+ChatRoom.prototype.closeRTC = function () {
+    this.socket_io.emit("rtc-close");
 }
 
-ChatRoom.prototype.broadcast = function (message) {
-    if (this.socket_io) {
-        this.socket_io.emit("broadcast", message);
-    }
+ChatRoom.prototype.sendOffer = function (description) {
+    var msgString = JSON.stringify({ "sdp": description });
+    this.socket_io.emit("rtc-offer", msgString);
 }
 
+ChatRoom.prototype.sendAnswer = function (description) {
+    var msgString = JSON.stringify({ "sdp": description });
+    this.socket_io.emit("rtc-answer", msgString);
+}
 
-
+ChatRoom.prototype.sendCandidate = function (candidate) {
+    var msgString = JSON.stringify({
+        sdpMLineIndex: candidate.sdpMLineIndex,
+        sdpMid: candidate.sdpMid,
+        candidate: candidate.candidate
+    });
+    this.socket_io.emit("rtc-candidate", msgString);
+}

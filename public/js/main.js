@@ -1,20 +1,7 @@
-
-
-
-
-
-webRTCClient.onIceCandidate = function (event) {
-  if (event.candidate) {
-    signaling.sendCandidate(event.candidate);
-    trace("onIceCandidate: " + event.candidate.candidate);
-  } else {
-    trace("End of candidates." + event);
-  }
-}
-
-webRTCClient.addRemoteStream = function (event) {
-  addRemoteStream(event.stream);
-}
+var webSocket = io.connect();
+var chatRoom = new ChatRoom(webSocket);
+chatRoom.connect(roomId, userId);
+notifyMsg.textContent = "Share URL: " + window.location;
 
 function onMuteAudio() {
   var audioTracks = localStream.getAudioTracks();
