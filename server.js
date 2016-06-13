@@ -29,7 +29,7 @@ router.get("/index(.html)?", function (req, res) {
 })
 
 router.get("/room/:id", function (req, res) {
-  res.render("room", { "roomId": req.params.id });
+  res.render("chatroom", { "roomId": req.params.id });
 })
 
 function log(msg) {

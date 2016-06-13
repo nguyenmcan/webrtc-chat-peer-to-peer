@@ -1,36 +1,7 @@
 
-var servers = { "iceServers": [{ "urls": ["stun:192.168.38.162:3478", "turn:192.168.38.162:3478"] }], "certificates": [] };
-var socket = io.connect();
-var signaling = new WebRTCSignaling(socket);
-var webRTCClient = new WebRTCClient();
 
-signaling.rtccandidate = function (candidate) {
-  webRTCClient.addIceCandidate(new RTCIceCandidate(candidate));
-}
 
-signaling.rtcclose = function (user) {
-  onRTCClosed(user);
-}
 
-signaling.rtcoffer = function (offerSDP) {
-  webRTCClient.createRTCConnection(servers);
-  webRTCClient.addLocalStream(window.localStream);
-  webRTCClient.createAnswer(offerSDP).then(function (answerSDP) {
-    signaling.sendAnswer(answerSDP);
-  });
-}
-
-signaling.rtcanswer = function (sdp) {
-  webRTCClient.setRemoteDescription(new RTCSessionDescription(sdp));
-}
-
-signaling.onjoined = function (user, roomsize) {
-  joinRoom(user, roomsize);
-}
-
-signaling.onleaved = function (user, roomsize) {
-  leaveRoom(user, roomsize);
-}
 
 webRTCClient.onIceCandidate = function (event) {
   if (event.candidate) {

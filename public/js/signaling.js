@@ -63,3 +63,34 @@ WebRTCSignaling.prototype.sendCandidate = function (candidate) {
     });
     this.socket_io.emit("rtc-candidate", msgString);
 }
+
+
+//////////////////////////
+
+signaling.rtccandidate = function (candidate) {
+  webRTCClient.addIceCandidate(new RTCIceCandidate(candidate));
+}
+
+signaling.rtcclose = function (user) {
+  onRTCClosed(user);
+}
+
+signaling.rtcoffer = function (offerSDP) {
+  webRTCClient.createRTCConnection(servers);
+  webRTCClient.addLocalStream(window.localStream);
+  webRTCClient.createAnswer(offerSDP).then(function (answerSDP) {
+    signaling.sendAnswer(answerSDP);
+  });
+}
+
+signaling.rtcanswer = function (sdp) {
+  webRTCClient.setRemoteDescription(new RTCSessionDescription(sdp));
+}
+
+signaling.onjoined = function (user, roomsize) {
+  joinRoom(user, roomsize);
+}
+
+signaling.onleaved = function (user, roomsize) {
+  leaveRoom(user, roomsize);
+}
