@@ -42,6 +42,7 @@ var io = socketIO.listen(appServer);
 
 io.sockets.on('connection', function (socket) {
   socket.on('rtc-candidate', function (message) {
+    log("rtc-candidate: " + message);
     socket.broadcast.to(socket.room).emit('rtc-candidate', message);
   });
 
@@ -56,6 +57,11 @@ io.sockets.on('connection', function (socket) {
   socket.on('rtc-close', function () {
     socket.broadcast.to(socket.room).emit('rtc-close', socket.user);
   });
+
+  socket.on('rtc-request', function () {
+    log("rtc-request: " + socket.user);
+    socket.broadcast.to(socket.room).emit('rtc-request', socket.user);
+  });  
 
   socket.on('message', function (message) {
     log(socket.user + ' said: ' + message);

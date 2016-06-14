@@ -33,14 +33,3 @@ ChatRoom.prototype.emit = function (type, message) {
   this.socket_io.emit(type, message);
 }
 
-//////////////////////////////////
-
-var webSocket = io.connect();
-var chatRoom = new ChatRoom(webSocket);
-
-chatRoom.onMessage = function (user, message) {
-  displayMessage(user, message.trim());
-}
-
-chatRoom.connect(roomId, userId);
-

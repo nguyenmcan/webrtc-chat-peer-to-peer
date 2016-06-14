@@ -8,6 +8,8 @@ html
     script(src="/socket.io/socket.io.js")
     
   body(style="display:flex;display:-webkit-flex; width: 100%; height: 100%")
+    input#selectFile(type="file", style="display: none")
+
     div#contentLeft(style="background-color: #3E3E3E;position:relative;flex:6")
       div#videoArea
         video#localVideo(autoplay=true)
@@ -29,6 +31,9 @@ html
           div#chatScreen(style="top:60px;bottom:20px;width:100%;text-align:left;overflow:auto;position:absolute")
         textarea#inputText(style="height:10%;padding:5px;margin-top:-10px;resize:none;width:90%;border:1px solid #9e9e9e", placeholder="write some text...")
           
+    script(src="/js/chatroom.js")         
+    script(src="/js/rtcclient.js") 
+    
     script.              
       var localStream;
       var roomId = #{roomId};
@@ -48,6 +53,20 @@ html
         chatScreen.appendChild(elemBr);
         chatScreen.scrollTop = 999999;
       }
+
+      function displayImage(user, url) {
+        var elemSpan = document.createElement('span');
+        if(user == "Me") {
+          elemSpan.style.color = "#3F51B5";  
+        } else{
+          elemSpan.style.color = "#9C27B0";
+        }
+        elemSpan.innerHTML = "<strong>" + user + "</strong>" + ": " + "<img src=" + url + ">" + "</img>";
+        chatScreen.appendChild(elemSpan);
+        var elemBr = document.createElement('br');
+        chatScreen.appendChild(elemBr);
+        chatScreen.scrollTop = 999999;
+      }      
       
       function trace(text) {
         if (text[text.length - 1] === '\n') {
@@ -157,7 +176,155 @@ html
           return false;
         }
       }      
+
+      //////////////////////////////////
+      var webSocket = io.connect();
+      var joinRoom = false;
+      var initator = false;
+      var chatRoom = new ChatRoom(webSocket);
       
-    script(src="/js/chatroom.js")
-    script(src="/js/rtcclient.js")
+      chatRoom.onMessage = function (user, message) {
+        displayMessage(user, message.trim());
+      }         
+    
+      /////////////////////////////
+      var servers = { "iceServers": [{ "urls": ["stun:192.168.38.162:3478", "turn:192.168.38.162:3478"] }], "certificates": [] };
+      var rtccontains = null;
+      var webRTCClient = new WebRTCClient();
+
+      webRTCClient.addRemoteStream = function (event) {
+          remoteStream = event.stream;
+          remoteVideo.src = window.URL.createObjectURL(remoteStream);
+          miniVideo.src = window.URL.createObjectURL(new MediaStream(localStream.getVideoTracks()));
+          localVideo.pause();
+          remoteVideo.classList.add("active");
+          miniVideo.classList.add("active");
+          trace("Add remoteStream " + event.stream.id);
+      }
+
+      webRTCClient.rtcRequest = function (user) {
+          webRTCClient.initRTCConnection(servers);
+          webRTCClient.createOffer();
+          trace("RTC request connection!");
+      }
+
+      webRTCClient.rtcClose = function (user) {
+          trace("RTC close connection!");
+      }
+
+      webRTCClient.rtcOffer = function (message) {
+          var object = JSON.parse(message);
+          webRTCClient.initRTCConnection(servers);
+          webRTCClient.createAnswer(object.sdp);
+          trace("RTC offer!");
+      }
+
+      webRTCClient.rtcAnswer = function (message) {
+          var object = JSON.parse(message);
+          webRTCClient.setRemoteDescription(new RTCSessionDescription(object.sdp));
+          trace("RTC answer!");
+      }
+
+      webRTCClient.rtcCandidate = function (message) {
+          var candidate = JSON.parse(message);
+          webRTCClient.addIceCandidate(new RTCIceCandidate(candidate));
+          trace("rtcCandidate: " + message);
+      }
+
+      webRTCClient.registSignaling(chatRoom);
+
+      //////////////
+
+      var receiveBuffer = [];
+      var receiveBufferSize = 0;
+      var sendFileSize = 0;
+
+      selectFile.addEventListener('change', function (evt){
+        var files = evt.target.files; // FileList object
+        if(files.length == 1) {
+          var file = files[0];
+          sendFile(file);
+        }
+        trace("Files: " + files.length);
+      }, false);     
+
+      sendFileBtn.onclick = function(event) {
+        // Check for the various File API support.
+        if (window.File && window.FileReader && window.FileList && window.Blob) {
+          selectFile.click();
+        } else {
+          alert('The File APIs are not fully supported in this browser.');
+        }
+      }      
+      
+      function sendFile(file) {
+        webRTCClient.sendData("start");
+        sendFileSize = 0;
+        trace("Send file size! " + file.size);
+        readChunkFile(file, 0, 16 * 1024);
+      }
+      
+      function readChunkFile(file, start, limit) {
+        var fileReader = new FileReader();
+        fileReader.onload = function(event) {
+          sendFileSize += event.target.result.byteLength;
+          webRTCClient.sendData(event.target.result);
+          if(event.target.result.byteLength == limit) {
+            readChunkFile(file, start + limit, limit);
+          } else {
+            webRTCClient.sendData("end:" + file.name);
+            selectFile.value = "";
+            trace("> " + sendFileSize);
+            trace("Send file done! size: " + file.size);
+          }
+        }
+        var blob = file.slice(start, start + limit);
+        fileReader.readAsArrayBuffer(blob);
+      }
+
+      webRTCClient.onReceiveMessage = function (event) {
+        trace(event);
+        if (typeof event.data === "string") {
+          trace("data: " + event.data);
+          if(event.data == "start") {
+            receiveBuffer = [];
+            receiveBufferSize = 0;
+          } else if (event.data.startsWith("end:")) {
+            var fileName = event.data.slice(4);
+            createFile2Download(fileName);
+            trace("Receive file : " + fileName + " > total: " + receiveBufferSize);
+          }
+       } else {
+          receiveBuffer.push(event.data);
+          receiveBufferSize += event.data.byteLength;
+        }
+      }      
+      
+      function createFile2Download(fileName) {
+        var received = new window.Blob(receiveBuffer);
+        var url = window.URL.createObjectURL(received);
+        displayImage("Me", url);
+      }    
+
+      //////////////////
+      
+      chatRoom.onJoined = function (user, roomsize) {
+        if(user == userId && roomsize == 2) {
+          webRTCClient.initRTCConnection(servers);
+          webRTCClient.createOffer();
+          trace("RTC request connection!");
+        }
+        trace("joined: " + user);
+      }
+
+      chatRoom.onLeaved = function (user, roomsize) {
+        trace("leaved: " + user);
+      }   
+
+      chatRoom.connect(roomId, userId);
+
+            
+
+      
+    
             
