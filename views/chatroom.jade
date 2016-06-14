@@ -5,44 +5,159 @@ html
     link(rel="stylesheet", href="/css/chatroom.css")
     script(src="/js/lib/jquery.min.js")
     script(src="/js/lib/adapter.js")
-    script(src="/socket.io/socket.io.js")  
-    script(src="/js/chatroom.js")
-  body
-    input#selectFile(type="file", style="display: none")
-    a#downloadFile(style="display:none;z-index:999;padding:20px 10px;top:40px;position:absolute;background-color:white")
+    script(src="/socket.io/socket.io.js")
     
-    div#buttonBar(style="z-index: 999")
-      div#confirmButtons(style="z-index: 999; display: none")
-        button#homeBtn(style="") NEW ROOM
-        button#sendFileBtn(style="background-color:#009BAF") SENT FILE
-        button#startCallBtn(style="background-color: #4CAF50") START CALL
-        
-      div#controlButtons(style="z-index: 999; display: none")
-        button#muteAudioBtn(style="") Mute Audio
-        button#muteVideoBtn(style="") Mute Video
-        button#hangupBtn(style="background-color:red") Hangup
+  body(style="display:flex;display:-webkit-flex; width: 100%; height: 100%")
+    div#contentLeft(style="background-color: #3E3E3E;position:relative;flex:6")
+      div#videoArea
+        video#localVideo(autoplay=true)
+        video#remoteVideo(autoplay=true)
+        video#miniVideo(autoplay=true)
       
-    // p#notifyMsg(style="z-index: 999; padding:20px;position: absolute; bottom: 0px; left: 10px; color: blue; background-color: #DCDCDC")      
-
-    div.contentLeft
+      div#leftButtons(style="position:absolute;top:5px;z-index:999;text-align:right;width:100%")
+        button#muteAudioBtn(style="height:40px;margin:5px") Mute Audio
+        button#muteVideoBtn(style="height:40px;margin:5px") Mute Video
+        button#hangupBtn(style="height:40px;margin:5px;background-color:red") Hangup       
       
-    div#contentRight(style="")
-        div#chatScreen(style="background-color: rgb(255, 253, 232);height:50%;")
-        div(style="position:absolute;bottom:0px;padding:10px;width:100%;text-align:center")
-          textarea#inputText(style="padding:10px;width:30%;", cols="40", rows="5")
-          button#sendMsg(style="") Send Text
-        
+    div#contentRight(style="background-color:#E4E4E4;position:relative;flex:4")
+      div#rightButtons(style="width:100%;position:absolute;top:0px;right:0px;z-index:999;text-align:right;border-bottom: 1px solid #3E3E3E")
+        span#members(style="float:left; margin-top: 15px") Members: 
+        button#sendFileBtn(style="height:40px;margin: 5px") SENT FILE
+        button#videoCallBtn(style="height:40px;margin: 5px") VIDEO CALL        
+      div#wrapContentRight(style="position:absolute;bottom:5px;width:100%;height:100%;text-align:center")
+        div#wrapChatScreen(style="height:90%;width:90%;margin:0px auto;position:relative")
+          div#chatScreen(style="top:60px;bottom:20px;width:100%;text-align:left;overflow:auto;position:absolute")
+        textarea#inputText(style="height:10%;padding:5px;margin-top:-10px;resize:none;width:90%;border:1px solid #9e9e9e", placeholder="write some text...")
+          
     script.              
+      var localStream;
       var roomId = #{roomId};
-      var userId = Math.floor((Math.random() * 100000) + 99999);   
-      function resizeWindow() {
-        var screenHeight = $(window).height();
-        var screenWidth = $(window).width();
-        contentRight.style.height = screenHeight + "px";
+      var userId = Math.floor((Math.random() * 100000) + 99999);
+      var mediaConstraints = { "audio": true, "video": { "optional": [{ "minWidth": "1280" }, { "minHeight": "720" }], "mandatory": {} } }
+      
+      function displayMessage(user, message) {
+        var elemSpan = document.createElement('span');
+        if(user == "Me") {
+          elemSpan.style.color = "#3F51B5";  
+        } else{
+          elemSpan.style.color = "#9C27B0";
+        }
+        elemSpan.innerHTML = "<strong>" + user + "</strong>" + ": " + message;
+        chatScreen.appendChild(elemSpan);
+        var elemBr = document.createElement('br');
+        chatScreen.appendChild(elemBr);
+        chatScreen.scrollTop = 999999;
       }
-      $(window).resize(function(){
-        resizeWindow();
-      })                   
-      resizeWindow();
-    script(src="/js/main.js")
+      
+      function trace(text) {
+        if (text[text.length - 1] === '\n') {
+          text = text.substring(0, text.length - 1);
+        }
+        if (window.performance) {
+          var now = (window.performance.now() / 1000).toFixed(3);
+          console.log(now + ': ' + text);
+        } else {
+          console.log(text);
+        }
+      }   
+            
+      function startMediaStream() {
+        navigator.mediaDevices.getUserMedia(mediaConstraints).then(function (stream) {
+          localStream = stream;
+          localVideo.src = window.URL.createObjectURL(new MediaStream(stream.getVideoTracks()));
+          miniVideo.src = window.URL.createObjectURL(new MediaStream(stream.getVideoTracks()));
+          trace("Start media stream!");            
+        });
+      }      
+      
+      function onMuteAudio() {
+        var audioTracks = localStream.getAudioTracks();
+        if (audioTracks.length === 0) {
+          trace("No local audio available.");
+          return;
+        }
+        for (var i = 0; i < audioTracks.length; ++i) {
+          audioTracks[i].enabled = !audioTracks[i].enabled;
+        }
+        trace("Audio " + (audioTracks[0].enabled ? "unmuted." : "muted."));
+        return Promise.resolve(audioTracks[0].enabled);
+      }
+
+      function onMuteVideo() {
+        var videoTracks = localStream.getVideoTracks();
+        if (videoTracks.length === 0) {
+          trace("No local video available.");
+          return;
+        }
+        for (var i = 0; i < videoTracks.length; ++i) {
+          videoTracks[i].enabled = !videoTracks[i].enabled;
+        }
+        trace("Video " + (videoTracks[0].enabled ? "unmuted." : "muted."));
+        return Promise.resolve(videoTracks[0].enabled);
+      }
+      
+      function stopMediaStream() {
+        var videoTracks = localStream.getVideoTracks();
+        if (videoTracks.length === 0) {
+          trace("No local video available.");
+          return;
+        }
+        for (var i = 0; i < videoTracks.length; ++i) {
+          videoTracks[i].stop();
+        }        
+        var audioTracks = localStream.getAudioTracks();
+        if (audioTracks.length === 0) {
+          trace("No local audio available.");
+          return;
+        }
+        for (var i = 0; i < audioTracks.length; ++i) {
+          audioTracks[i].stop();
+        }        
+      }
+      
+      muteAudioBtn.onclick = function(event) {
+        onMuteAudio().then(function(enabled) {
+          if(enabled) {
+            muteAudioBtn.classList.remove("inactive");
+          } else {
+            muteAudioBtn.classList.add("inactive");
+          }
+        });
+      }
+            
+      muteVideoBtn.onclick = function(event) {
+        onMuteVideo().then(function(enabled) {
+          if(enabled) {
+            muteVideoBtn.classList.remove("inactive");
+          } else {
+            muteVideoBtn.classList.add("inactive");
+          }
+        });
+      }
+      
+      hangupBtn.onclick = function(event) {
+        stopMediaStream();
+        contentLeft.style.display = "none";
+        videoCallBtn.disabled = false;
+      }
+      
+      videoCallBtn.onclick = function(event) {
+        startMediaStream();
+        contentLeft.style.display = "block";
+        videoCallBtn.disabled = true;
+      }
+      
+      inputText.onkeydown = function(event) {
+        if((event.code == "Enter" || event.code == "NumpadEnter") && event.shiftKey == false) {
+          if(inputText.value.trim() != '') {
+            chatRoom.sendMessage(inputText.value.trim());
+            displayMessage("Me", inputText.value.trim());
+            inputText.value = '';
+          }
+          return false;
+        }
+      }      
+      
+    script(src="/js/chatroom.js")
+    script(src="/js/rtcclient.js")
             
