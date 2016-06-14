@@ -4,6 +4,7 @@ var WebRTCClient = function (signaling) {
     this.sendDataChannel = undefined;
     this.receiveDataChannel = undefined;
 
+    this.signaling.eventHandler('rtc-connect', this.rtcClose);
     this.signaling.eventHandler('rtc-close', this.rtcClose);
     this.signaling.eventHandler('rtc-offer', this.rtcOffer);
     this.signaling.eventHandler('rtc-answer', this.rtcAnswer);
@@ -65,6 +66,9 @@ WebRTCClient.prototype.onIceCandidate = function (event) {
     } else {
         trace("End of candidates." + event);
     }
+}
+
+WebRTCClient.prototype.rtcConnect = function (user) {
 }
 
 WebRTCClient.prototype.rtcClose = function (user) {
@@ -151,6 +155,7 @@ webRTCClient.addRemoteStream = function (event) {
 webRTCClient.rtcOffer = function (message) {
     trace("RTC offer!");
     var object = JSON.parse(message);
+    webRTCClient.initRTCConnection(servers, {});
     if (localStream) {
         webRTCClient.addStream(localStream);
     }
@@ -168,4 +173,3 @@ webRTCClient.rtcCandidate = function (message) {
     webRTCClient.addIceCandidate(new RTCIceCandidate(candidate));
 }
 
-webRTCClient.initRTCConnection(servers, {});
