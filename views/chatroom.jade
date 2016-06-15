@@ -40,7 +40,11 @@ html
       
       function displayMessage(user, message) {
         var elemSpan = document.createElement('div');
-        if(user == "Me") {
+        if(user == "System") {
+          elemSpan.style.color = "#FF5722";
+          elemSpan.style["text-align"] = "left";
+          elemSpan.innerHTML = "<strong>" + user + "</strong>" + ": " + message;
+        } else if(user == "Me") {
           elemSpan.style.color = "#3F51B5";
           elemSpan.style["text-align"] = "left";
           elemSpan.innerHTML = "<strong>" + user + "</strong>" + ": " + message;  
@@ -362,10 +366,12 @@ html
           webRTCClient.createOffer();
           trace("RTC request connection!");
         }
+        displayMessage("System", user + " joined!");
         trace("joined: " + user);
       }
 
       chatRoom.onLeaved = function (user, roomsize) {
+        displayMessage("System", user + " leaved!");
         trace("leaved: " + user);
       }   
 
