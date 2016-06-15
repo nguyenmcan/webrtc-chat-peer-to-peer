@@ -46,6 +46,6 @@ button.inactive {
   position: absolute;
   max-width: 30%;  
   right: 1px;
-  top: 1px;
+  bottom: 1px;
   border: 1px solid #9E9E9E;
 }
