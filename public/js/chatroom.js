@@ -6,6 +6,8 @@ var ChatRoom = function (socket) {
     this.socket_io.on('joined', this.onJoined);
     this.socket_io.on('leaved', this.onLeaved);
     this.socket_io.on('message', this.onMessage);
+    this.socket_io.on('start video call', this.onStartVideoCall);
+    this.socket_io.on('stop video call', this.onStopVideoCall);
   }
 }
 
@@ -23,6 +25,22 @@ ChatRoom.prototype.onLeaved = function (user, roomsize) {
 
 ChatRoom.prototype.onMessage = function (user, message) {
   trace("message: " + message);
+}
+
+ChatRoom.prototype.onStartVideoCall = function (user) {
+  trace("message: " + user);
+}
+
+ChatRoom.prototype.onStopVideoCall = function (user) {
+  trace("message: " + user);
+}
+
+ChatRoom.prototype.stopVideoCall = function () {
+  this.socket_io.emit("stop video call");
+}
+
+ChatRoom.prototype.startVideoCall = function () {
+  this.socket_io.emit("start video call");
 }
 
 ChatRoom.prototype.sendMessage = function (message) {

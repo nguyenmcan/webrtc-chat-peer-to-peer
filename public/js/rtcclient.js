@@ -25,29 +25,36 @@ var WebRTCClient = function () {
             this.rtcConnection.onconnectionstatechange = function (event) {
                 trace(">>> connectionStateChange: " + this.rtcConnection.connectionState);
             }.bind(this);
-            this.sendDataChannel = this.rtcConnection.createDataChannel("sendDataChannel", { reliable: true });
+            this.sendDataChannel = this.rtcConnection.createDataChannel("sendDataChannel");
             this.sendDataChannel.binaryType = 'arraybuffer';
             this.sendDataChannel.onopen = function (event) {
                 var readyState = this.sendDataChannel.readyState;
-                trace('>>> Receive channel state is: ' + readyState);
+                trace('>>> Receive local channel state is: ' + readyState);
             }.bind(this);
             this.sendDataChannel.onclose = function (event) {
                 var readyState = this.sendDataChannel.readyState;
-                trace('>>> Receive channel state is: ' + readyState);
+                trace('>>> Receive local channel state is: ' + readyState);
             }.bind(this);
-            this.rtcConnection.onDataChannel = function (event) {
+            this.sendDataChannel.onerror = function (event) {
+                trace("ERROR: " + event.message);
+            }
+            this.rtcConnection.ondatachannel = function (event) {
                 this.receiveDataChannel = event.channel;
                 this.receiveDataChannel.binaryType = 'arraybuffer';
                 this.receiveDataChannel.onmessage = this.onReceiveMessage;
                 this.receiveDataChannel.onopen = function (event) {
                     var readyState = this.receiveDataChannel.readyState;
-                    trace('Receive channel state is: ' + readyState);
+                    trace('Receive remote channel state is: ' + readyState);
                 }.bind(this);
                 this.receiveDataChannel.onclose = function (event) {
                     var readyState = this.receiveDataChannel.readyState;
-                    trace('Receive channel state is: ' + readyState);
+                    trace('Receive remote channel state is: ' + readyState);
                 }.bind(this);
-            }
+                this.receiveDataChannel.onerror = function (event) {
+                    trace("ERROR: " + event.message);
+                }
+                trace(">>> Receive remote data channel!" + event.channel);
+            }.bind(this);
             trace('Init RTC connection!');
         } catch (e) {
             trace("Failed to create PeerConnection, exception: " + e.message);
@@ -70,7 +77,6 @@ WebRTCClient.prototype.createOffer = function () {
         if (this.signaling) {
             this.signaling.emit("rtc-offer", msgString);
         }
-        trace("Create offer!" + msgString);
     }.bind(this));
 }
 
@@ -112,7 +118,6 @@ WebRTCClient.prototype.onIceCandidate = function (event) {
             candidate: event.candidate.candidate
         });
         this.signaling.emit("rtc-candidate", msgString);
-        trace("emit: " + msgString);
         trace("onIceCandidate: " + event.candidate.candidate);
     } else {
         trace("End of candidates." + event);
@@ -147,5 +152,6 @@ WebRTCClient.prototype.sendData = function (data) {
 }
 
 WebRTCClient.prototype.onReceiveMessage = function (event) {
+    trace("data.....");
 }
 

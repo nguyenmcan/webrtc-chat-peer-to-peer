@@ -15,16 +15,14 @@ html
         video#localVideo(autoplay=true)
         video#remoteVideo(autoplay=true)
         video#miniVideo(autoplay=true)
-      
       div#leftButtons(style="position:absolute;top:5px;z-index:999;text-align:right;width:100%")
         button#muteAudioBtn(style="height:40px;margin:5px") Mute Audio
         button#muteVideoBtn(style="height:40px;margin:5px") Mute Video
         button#hangupBtn(style="height:40px;margin:5px;background-color:red") Hangup       
       
     div#contentRight(style="background-color:#E4E4E4;position:relative;flex:4")
-      div#rightButtons(style="width:100%;position:absolute;top:0px;right:0px;z-index:999;text-align:right;border-bottom: 1px solid #3E3E3E")
-        span#members(style="float:left; margin-top: 15px") Members: 
-        button#sendFileBtn(style="height:40px;margin: 5px") SENT FILE
+      div#rightButtons(style="width:100%;position:absolute;top:0px;right:0px;z-index:999;text-align:right;border-bottom: 1px solid #3E3E3E") 
+        button#sendFileBtn(style="height:40px;margin: 5px") SENT IMAGE
         button#videoCallBtn(style="height:40px;margin: 5px") VIDEO CALL        
       div#wrapContentRight(style="position:absolute;bottom:5px;width:100%;height:100%;text-align:center")
         div#wrapChatScreen(style="height:90%;width:90%;margin:0px auto;position:relative")
@@ -41,30 +39,32 @@ html
       var mediaConstraints = { "audio": true, "video": { "optional": [{ "minWidth": "1280" }, { "minHeight": "720" }], "mandatory": {} } }
       
       function displayMessage(user, message) {
-        var elemSpan = document.createElement('span');
+        var elemSpan = document.createElement('div');
         if(user == "Me") {
-          elemSpan.style.color = "#3F51B5";  
+          elemSpan.style.color = "#3F51B5";
+          elemSpan.style["text-align"] = "left";
+          elemSpan.innerHTML = "<strong>" + user + "</strong>" + ": " + message;  
         } else{
           elemSpan.style.color = "#9C27B0";
+          elemSpan.style["text-align"] = "right";
+          elemSpan.innerHTML = message + " :" + "<strong>" + user + "</strong>";
         }
-        elemSpan.innerHTML = "<strong>" + user + "</strong>" + ": " + message;
         chatScreen.appendChild(elemSpan);
-        var elemBr = document.createElement('br');
-        chatScreen.appendChild(elemBr);
         chatScreen.scrollTop = 999999;
       }
 
       function displayImage(user, url) {
-        var elemSpan = document.createElement('span');
+        var elemSpan = document.createElement('div');
         if(user == "Me") {
-          elemSpan.style.color = "#3F51B5";  
+          elemSpan.style.color = "#3F51B5";
+          elemSpan.style["text-align"] = "left";
+          elemSpan.innerHTML = '<div style="float:left"><strong>' + user + ":&nbsp;" + '</strong></div>' + '<img width="30%" src=' + url + ">" + "</img>";
         } else{
           elemSpan.style.color = "#9C27B0";
+          elemSpan.style["text-align"] = "right";
+          elemSpan.innerHTML = '<img width="30%" src=' + url + ">" + "</img>" + '<div style="float:right"><strong>' + "&nbsp;:" + user + '</strong></div>';
         }
-        elemSpan.innerHTML = "<strong>" + user + "</strong>" + ": " + "<img src=" + url + ">" + "</img>";
         chatScreen.appendChild(elemSpan);
-        var elemBr = document.createElement('br');
-        chatScreen.appendChild(elemBr);
         chatScreen.scrollTop = 999999;
       }      
       
@@ -81,12 +81,17 @@ html
       }   
             
       function startMediaStream() {
-        navigator.mediaDevices.getUserMedia(mediaConstraints).then(function (stream) {
-          localStream = stream;
-          localVideo.src = window.URL.createObjectURL(new MediaStream(stream.getVideoTracks()));
-          miniVideo.src = window.URL.createObjectURL(new MediaStream(stream.getVideoTracks()));
-          trace("Start media stream!");            
-        });
+        return new Promise(function(resolve, error) {
+          navigator.mediaDevices.getUserMedia(mediaConstraints).then(function (stream) {
+            localStream = stream;
+            localVideo.src = window.URL.createObjectURL(new MediaStream(stream.getVideoTracks()));
+            remoteVideo.style.display = "none";
+            miniVideo.style.display = "none";
+            localVideo.style.display = "block";            
+            trace("Start media stream!");            
+            resolve(stream);
+          });
+        })
       }      
       
       function onMuteAudio() {
@@ -155,15 +160,11 @@ html
       }
       
       hangupBtn.onclick = function(event) {
-        stopMediaStream();
-        contentLeft.style.display = "none";
-        videoCallBtn.disabled = false;
+        stopVideoCall();
       }
       
       videoCallBtn.onclick = function(event) {
-        startMediaStream();
-        contentLeft.style.display = "block";
-        videoCallBtn.disabled = true;
+        startVideoCall();
       }
       
       inputText.onkeydown = function(event) {
@@ -195,11 +196,12 @@ html
       webRTCClient.addRemoteStream = function (event) {
           remoteStream = event.stream;
           remoteVideo.src = window.URL.createObjectURL(remoteStream);
+          remoteVideo.style.display = "block";
           miniVideo.src = window.URL.createObjectURL(new MediaStream(localStream.getVideoTracks()));
+          miniVideo.style.display = "block";
           localVideo.pause();
-          remoteVideo.classList.add("active");
-          miniVideo.classList.add("active");
-          trace("Add remoteStream " + event.stream.id);
+          localVideo.style.display = "none";
+          trace(">>> Add remoteStream " + event.stream.id);
       }
 
       webRTCClient.rtcRequest = function (user) {
@@ -215,6 +217,9 @@ html
       webRTCClient.rtcOffer = function (message) {
           var object = JSON.parse(message);
           webRTCClient.initRTCConnection(servers);
+          if(localStream) {
+             webRTCClient.addStream(localStream);
+          }
           webRTCClient.createAnswer(object.sdp);
           trace("RTC offer!");
       }
@@ -258,23 +263,30 @@ html
       }      
       
       function sendFile(file) {
+        receiveBuffer = [];
+        receiveBufferSize = 0;        
+        // 
         webRTCClient.sendData("start");
-        sendFileSize = 0;
         trace("Send file size! " + file.size);
         readChunkFile(file, 0, 16 * 1024);
+        //
+        var fr = new FileReader();
+        fr.onload = function (event) {
+            displayImage("Me", event.target.result);
+        };
+        fr.readAsDataURL(file);    
       }
       
       function readChunkFile(file, start, limit) {
         var fileReader = new FileReader();
         fileReader.onload = function(event) {
-          sendFileSize += event.target.result.byteLength;
           webRTCClient.sendData(event.target.result);
+          receiveBuffer.push(event.target.result);
           if(event.target.result.byteLength == limit) {
             readChunkFile(file, start + limit, limit);
           } else {
-            webRTCClient.sendData("end:" + file.name);
+            webRTCClient.sendData("end:" + userId);
             selectFile.value = "";
-            trace("> " + sendFileSize);
             trace("Send file done! size: " + file.size);
           }
         }
@@ -283,7 +295,6 @@ html
       }
 
       webRTCClient.onReceiveMessage = function (event) {
-        trace(event);
         if (typeof event.data === "string") {
           trace("data: " + event.data);
           if(event.data == "start") {
@@ -303,9 +314,46 @@ html
       function createFile2Download(fileName) {
         var received = new window.Blob(receiveBuffer);
         var url = window.URL.createObjectURL(received);
-        displayImage("Me", url);
+        displayImage(fileName, url);
       }    
 
+      //////////////////
+      
+      function startVideoCall() {
+        startMediaStream().then(function(stream) {
+          webRTCClient.initRTCConnection(servers);
+          webRTCClient.addStream(stream);
+          chatRoom.startVideoCall();
+        });
+        contentLeft.style.display = "block";
+        videoCallBtn.disabled = true;
+        trace("Start video call!");
+      }
+      
+      chatRoom.onStartVideoCall = function(user) {
+        startMediaStream().then(function(stream) {
+          webRTCClient.initRTCConnection(servers);
+          webRTCClient.addStream(stream);
+          webRTCClient.createOffer();          
+        });
+        contentLeft.style.display = "block";
+        videoCallBtn.disabled = true;        
+        trace("Start video call!");
+      }
+      
+      chatRoom.onStopVideoCall = function(user) {
+        stopMediaStream();
+        contentLeft.style.display = "none";
+        videoCallBtn.disabled = false;
+      }
+      
+      function stopVideoCall() {
+        stopMediaStream();
+        contentLeft.style.display = "none";
+        videoCallBtn.disabled = false;
+        chatRoom.stopVideoCall();        
+      }
+      
       //////////////////
       
       chatRoom.onJoined = function (user, roomsize) {
